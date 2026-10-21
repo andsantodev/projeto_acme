@@ -142,9 +142,39 @@ revoke all on function public.acme_consume_question() from public, anon;
 grant execute on function public.acme_consume_question() to authenticated;
 
 -- ---------------------------------------------------------------------------
--- 7. Fechamento do chamado pelo colaborador (respondido -> fechado)
+-- 6.1 Leitura do contador do dia (para a interface)
 -- ---------------------------------------------------------------------------
-create or replace function public.acme_close_ticket(p_ticket_id uuid)
+create or replace function public.acme_question_status(p_day date)
+returns table (used integer, remaining integer)
+language plpgsql
+stable
+security definer
+set search_path = public
+as $$
+declare
+  v_uid uuid := (select auth.uid());
+  v_used integer := 0;
+begin
+  if v_uid is null then
+    raise exception 'not authenticated' using errcode = '28000';
+  end if;
+
+  select c.count into v_used
+  from public.acme_chat_usage c
+  where c.user_id = v_uid and c.day = p_day;
+
+  return query
+    select coalesce(v_used, 0) as used,
+           greatest(10 - coalesce(v_used, 0), 0) as remaining;
+end;
+$$;
+
+revoke all on function public.acme_question_status(date) from public, anon;
+grant execute on function public.acme_question_status(date) to authenticated;
+
+-- ---------------------------------------------------------------------------
+-- 7. Fechamento do chamado pelo colaborador (respondido -> fechado)
+-- ---------------------------------------------------------------------------create or replace function public.acme_close_ticket(p_ticket_id uuid)
 returns void
 language plpgsql
 security definer

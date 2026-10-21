@@ -14,6 +14,7 @@ import {
   type Source,
   type Turn,
 } from "@/lib/rag";
+import { DAILY_QUESTION_LIMIT } from "@/lib/chat-usage";
 import { askAssistant } from "@/services/rag-actions";
 
 type ChatMessage =
@@ -32,11 +33,15 @@ type Failure = {
   question: string;
 };
 
-function TicketLink({ question }: { question: string }) {
+function TicketLink({ question }: { question?: string }) {
   return (
     <Link
       className="w-fit font-medium text-ink underline underline-offset-[3px]"
-      href={`/chamados/novo?pergunta=${encodeURIComponent(question)}`}
+      href={
+        question
+          ? `/chamados/novo?pergunta=${encodeURIComponent(question)}`
+          : "/chamados/novo"
+      }
     >
       Abrir chamado
     </Link>
@@ -68,11 +73,16 @@ function Answer({
   );
 }
 
-export function ChatPanel() {
+export function ChatPanel({
+  initialRemaining = null,
+}: {
+  initialRemaining?: number | null;
+}) {
   const [question, setQuestion] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [failure, setFailure] = useState<Failure | null>(null);
   const [fieldError, setFieldError] = useState<string | null>(null);
+  const [remaining, setRemaining] = useState<number | null>(initialRemaining);
   const [pending, startTransition] = useTransition();
   const nextId = useRef(0);
   const transcriptRef = useRef<HTMLDivElement>(null);
@@ -120,9 +130,11 @@ export function ChatPanel() {
           previous.filter((message) => message.id !== userMessage.id),
         );
         setFailure({ message: result.error, question: parsed.value });
+        setRemaining(result.remaining);
         return;
       }
 
+      setRemaining(result.remaining);
       nextId.current += 1;
       setMessages((previous) => [
         ...previous,
@@ -213,11 +225,26 @@ export function ChatPanel() {
         </Field>
 
         <div className="flex items-center justify-between gap-3">
-          <p className="text-xs text-muted">
-            Histórico desta conversa fica só nesta aba.
-          </p>
+          <div className="flex flex-col gap-1">
+            <p className="text-xs text-muted">
+              Histórico desta conversa fica só nesta aba.
+            </p>
+            {remaining === null ? null : remaining === 0 ? (
+              <p className="text-xs text-negative">
+                Limite diário atingido. <TicketLink />
+              </p>
+            ) : (
+              <p className="text-xs text-muted">
+                Restam {remaining} de {DAILY_QUESTION_LIMIT} perguntas hoje.
+              </p>
+            )}
+          </div>
           <Button
-            disabled={question.trim().length === 0 || question.length > QUESTION_MAX}
+            disabled={
+              remaining === 0 ||
+              question.trim().length === 0 ||
+              question.length > QUESTION_MAX
+            }
             loading={pending}
             type="submit"
             variant="primary"

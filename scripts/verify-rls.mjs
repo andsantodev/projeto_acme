@@ -168,4 +168,52 @@ assert(
   `HTTP ${result.status}`,
 );
 
+result = await rest(ana.token, "acme_chat_usage?select=count");
+assert(
+  "usuário não lê o contador diário",
+  result.status >= 400,
+  `HTTP ${result.status}`,
+);
+
+result = await rest(ana.token, "acme_chat_usage", {
+  method: "POST",
+  headers: { Prefer: "return=minimal" },
+  body: JSON.stringify({
+    user_id: ana.userId,
+    day: "2026-01-01",
+    count: 0,
+  }),
+});
+assert(
+  "usuário não grava o contador diário",
+  result.status >= 400,
+  `HTTP ${result.status}`,
+);
+
+const today = new Intl.DateTimeFormat("en-CA", {
+  timeZone: "America/Sao_Paulo",
+}).format(new Date());
+result = await rest(ana.token, "rpc/acme_question_status", {
+  method: "POST",
+  body: JSON.stringify({ p_day: today }),
+});
+assert(
+  "a função de status devolve used e remaining do próprio usuário",
+  result.status === 200 &&
+    Array.isArray(result.body) &&
+    typeof result.body[0]?.used === "number" &&
+    typeof result.body[0]?.remaining === "number",
+  JSON.stringify(result.body),
+);
+
+result = await rest(null, "rpc/acme_consume_question", {
+  method: "POST",
+  body: JSON.stringify({}),
+});
+assert(
+  "a função de consumo recusa chamada anônima",
+  result.status >= 400,
+  `HTTP ${result.status}`,
+);
+
 console.log("\nverify:rls passou — isolamento por usuário e por categoria confirmado.");

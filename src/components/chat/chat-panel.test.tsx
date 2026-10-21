@@ -33,6 +33,27 @@ describe("ChatPanel", () => {
     expect(screen.getByRole("button", { name: "Perguntar" })).toBeDisabled();
   });
 
+  it("shows the remaining questions for today", () => {
+    render(<ChatPanel initialRemaining={7} />);
+
+    expect(
+      screen.getByText("Restam 7 de 10 perguntas hoje."),
+    ).toBeInTheDocument();
+  });
+
+  it("disables the submit and offers a ticket when the limit is reached", () => {
+    render(<ChatPanel initialRemaining={0} />);
+
+    expect(screen.getByRole("button", { name: "Perguntar" })).toBeDisabled();
+    expect(
+      screen.getByText(/Limite diário atingido/),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Abrir chamado" })).toHaveAttribute(
+      "href",
+      "/chamados/novo",
+    );
+  });
+
   it("shows the loading state and disables the submit while waiting", async () => {
     let resolveAnswer: (value: unknown) => void = () => {};
     askAssistant.mockReturnValue(
@@ -41,7 +62,7 @@ describe("ChatPanel", () => {
       }),
     );
 
-    render(<ChatPanel />);
+    render(<ChatPanel initialRemaining={10} />);
     typeQuestion("Como peço acesso?");
     submit();
 
@@ -55,12 +76,13 @@ describe("ChatPanel", () => {
       answer: ANSWER,
       sources: [{ document: "acessos.md", excerpt: "trecho" }],
       grounded: true,
+      remaining: 9,
     });
 
     expect(await screen.findByText(ANSWER)).toBeInTheDocument();
   });
 
-  it("renders the answer with the cited documents", async () => {
+  it("renders the answer with the cited documents and updates the counter", async () => {
     askAssistant.mockResolvedValue({
       ok: true,
       answer: ANSWER,
@@ -69,14 +91,18 @@ describe("ChatPanel", () => {
         { document: "ferias.md", excerpt: "trecho 2" },
       ],
       grounded: true,
+      remaining: 9,
     });
 
-    render(<ChatPanel />);
+    render(<ChatPanel initialRemaining={10} />);
     typeQuestion("Como peço acesso?");
     submit();
 
     expect(await screen.findByText(ANSWER)).toBeInTheDocument();
     expect(screen.getByText("Fontes: acessos.md, ferias.md")).toBeInTheDocument();
+    expect(
+      screen.getByText("Restam 9 de 10 perguntas hoje."),
+    ).toBeInTheDocument();
     expect(askAssistant).toHaveBeenCalledWith({
       question: "Como peço acesso?",
       history: [],
@@ -89,9 +115,10 @@ describe("ChatPanel", () => {
       answer: "Não encontrei essa informação.",
       sources: [],
       grounded: false,
+      remaining: 8,
     });
 
-    render(<ChatPanel />);
+    render(<ChatPanel initialRemaining={9} />);
     typeQuestion("Qual a cor do céu em Marte?");
     submit();
 
@@ -108,9 +135,10 @@ describe("ChatPanel", () => {
     askAssistant.mockResolvedValue({
       ok: false,
       error: "Não foi possível consultar o assistente agora.",
+      remaining: 7,
     });
 
-    render(<ChatPanel />);
+    render(<ChatPanel initialRemaining={8} />);
     typeQuestion("Como peço acesso?");
     submit();
 
@@ -129,6 +157,7 @@ describe("ChatPanel", () => {
       answer: ANSWER,
       sources: [],
       grounded: true,
+      remaining: 6,
     });
     fireEvent.click(screen.getByRole("button", { name: "Tentar de novo" }));
 
@@ -136,8 +165,29 @@ describe("ChatPanel", () => {
     expect(askAssistant).toHaveBeenCalledTimes(2);
   });
 
+  it("blocks the next attempt when the server reports the daily limit", async () => {
+    askAssistant.mockResolvedValue({
+      ok: false,
+      error: "Você atingiu o limite de 10 perguntas hoje.",
+      remaining: 0,
+      limitReached: true,
+    });
+
+    render(<ChatPanel initialRemaining={1} />);
+    typeQuestion("Como peço acesso?");
+    submit();
+
+    expect(
+      await screen.findByText("Você atingiu o limite de 10 perguntas hoje."),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Perguntar" })).toBeDisabled();
+    expect(
+      screen.getByText(/Limite diário atingido/),
+    ).toBeInTheDocument();
+  });
+
   it("does not call the server for empty or above-limit questions", () => {
-    render(<ChatPanel />);
+    render(<ChatPanel initialRemaining={5} />);
 
     expect(screen.getByRole("button", { name: "Perguntar" })).toBeDisabled();
 
@@ -154,9 +204,10 @@ describe("ChatPanel", () => {
       answer: "Primeira resposta",
       sources: [],
       grounded: true,
+      remaining: 9,
     });
 
-    render(<ChatPanel />);
+    render(<ChatPanel initialRemaining={10} />);
     typeQuestion("Primeira pergunta");
     submit();
     await screen.findByText("Primeira resposta");
@@ -166,6 +217,7 @@ describe("ChatPanel", () => {
       answer: "Segunda resposta",
       sources: [],
       grounded: true,
+      remaining: 8,
     });
     typeQuestion("Segunda pergunta");
     submit();
