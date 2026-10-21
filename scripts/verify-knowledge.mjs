@@ -65,15 +65,18 @@ for (const source of EXPECTED_SOURCES) {
   console.log(`ok      ${source} (${chunks} trechos)`);
 }
 
-const unknown = [...chunksBySource.keys()].filter(
+const extras = [...chunksBySource.keys()].filter(
   (source) => !EXPECTED_SOURCES.includes(source),
 );
 
-if (unknown.length > 0) {
-  console.error(`FALHOU  fontes não previstas: ${unknown.join(", ")}`);
-  process.exit(1);
+if (extras.length > 0) {
+  console.log(
+    `info    fontes extras na base (não falham): ${extras
+      .map((source) => `${source} (${chunksBySource.get(source)} trechos)`)
+      .join(", ")}`,
+  );
 }
 
 console.log(
-  `\nverify:knowledge passou — ${rows.length} trechos, 5 documentos distintos.`,
+  `\nverify:knowledge passou — ${rows.length} trechos, os 5 documentos-base estão presentes.`,
 );

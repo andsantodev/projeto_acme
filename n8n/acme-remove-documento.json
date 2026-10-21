@@ -1,0 +1,327 @@
+{
+  "name": "Acme - Remover documento",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Acme - Remover documento",
+        "formDescription": "Informe a senha e o nome do arquivo. Deixe o arquivo vazio para limpar a base inteira.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Senha do upload",
+              "fieldName": "password",
+              "fieldType": "password",
+              "required": true
+            },
+            {
+              "fieldLabel": "Arquivo a remover",
+              "fieldName": "arquivo",
+              "fieldType": "text",
+              "required": false,
+              "placeholder": "ex.: ferias.md (vazio = limpar tudo)"
+            }
+          ]
+        },
+        "options": {
+          "path": "acme-remove-docs"
+        }
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "8ab91ae2-4f6b-40fe-afd6-fc9e65610b98",
+      "name": "Formulário de remoção"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "senha",
+              "name": "senha",
+              "value": "={{ $json[\"Senha do upload\"] || $json.password }}",
+              "type": "string"
+            },
+            {
+              "id": "arquivo",
+              "name": "arquivo",
+              "value": "={{ ($json['Arquivo a remover'] || '').trim() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        220,
+        0
+      ],
+      "id": "adf6cc0a-651f-4a23-befd-931aff4eee85",
+      "name": "Preparar dados"
+    },
+    {
+      "parameters": {
+        "action": "hash",
+        "type": "SHA256",
+        "value": "={{ $json.senha }}",
+        "dataPropertyName": "passwordHash",
+        "encoding": "hex"
+      },
+      "type": "n8n-nodes-base.crypto",
+      "typeVersion": 1,
+      "position": [
+        440,
+        0
+      ],
+      "id": "18c8f5e9-f150-410d-9c15-2af44801ade7",
+      "name": "Calcular hash da senha"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "password-hash",
+              "leftValue": "={{ $json.passwordHash }}",
+              "rightValue": "f0ac2375c823ca62208820d93163bb1b173bef60b5fc3c71db7b9f442b46e60f",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        660,
+        0
+      ],
+      "id": "cc5c88ee-c68e-4690-a0e2-7a8cab16bbd0",
+      "name": "Senha correta?"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "has-file",
+              "leftValue": "={{ $('Preparar dados').first().json.arquivo }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        880,
+        0
+      ],
+      "id": "6f71518e-c63f-4357-ae5f-261226f9c9ce",
+      "name": "Remover um arquivo?"
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "tableId": "acme_documents_vec",
+        "filterType": "string",
+        "filterString": "=metadata->>source=eq.{{ $('Preparar dados').first().json.arquivo }}"
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1100,
+        -140
+      ],
+      "id": "fa0053bb-083f-453e-9f37-c4f3d937e464",
+      "name": "Remover arquivo",
+      "credentials": {
+        "supabaseApi": {
+          "id": "<credential-id>",
+          "name": "Supabase do portal"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "tableId": "acme_documents_vec",
+        "filterType": "string",
+        "filterString": "=id=gte.0"
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1100,
+        140
+      ],
+      "id": "9112304e-c09d-4af0-8681-aed51ae39c24",
+      "name": "Limpar base inteira",
+      "credentials": {
+        "supabaseApi": {
+          "id": "<credential-id>",
+          "name": "Supabase do portal"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        880,
+        220
+      ],
+      "id": "ad40ab3c-2364-47ae-8cea-a3e950ef2c2d",
+      "name": "Senha inválida - encerrar"
+    },
+    {
+      "parameters": {
+        "content": "## O que este fluxo faz\nRemove UM documento da base pelo nome do arquivo.\nSe o campo de arquivo ficar vazio, limpa a base vetorial inteira para comecar uma demo do zero.",
+        "height": 140,
+        "width": 300
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -260,
+        -240
+      ],
+      "id": "9d6d6361-9513-4802-92fb-c7b26464f6fc",
+      "name": "Nota 1"
+    },
+    {
+      "parameters": {
+        "content": "## Mesma senha do upload\nA senha e conferida por SHA-256 antes de qualquer delete.\nSem a senha correta o fluxo termina sem tocar no banco.",
+        "height": 150,
+        "width": 300
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        180,
+        -240
+      ],
+      "id": "1b68c25b-07bd-47eb-ac2a-76b225c8551f",
+      "name": "Nota 2"
+    },
+    {
+      "parameters": {
+        "content": "## Delete por fonte\n`metadata->>source = nome do arquivo` remove so os trechos daquele documento;\nos demais continuam na base.",
+        "height": 150,
+        "width": 320
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        800,
+        -240
+      ],
+      "id": "9c6b47e5-8859-45c3-9345-da791ef241f8",
+      "name": "Nota 3"
+    }
+  ],
+  "connections": {
+    "Formulário de remoção": {
+      "main": [
+        [
+          {
+            "node": "Preparar dados",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar dados": {
+      "main": [
+        [
+          {
+            "node": "Calcular hash da senha",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calcular hash da senha": {
+      "main": [
+        [
+          {
+            "node": "Senha correta?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Senha correta?": {
+      "main": [
+        [
+          {
+            "node": "Remover um arquivo?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Senha inválida - encerrar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Remover um arquivo?": {
+      "main": [
+        [
+          {
+            "node": "Remover arquivo",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Limpar base inteira",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true
+  }
+}
