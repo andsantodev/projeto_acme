@@ -8,10 +8,10 @@ export default function NotFound() {
     <main className="mx-auto flex min-h-svh w-full max-w-[440px] flex-col justify-center px-6 py-12">
       <div className="flex items-center gap-2">
         <ProductMark />
-        <span className="text-[15px] font-semibold">{PRODUCT_NAME}</span>
+        <span className="text-brand font-semibold">{PRODUCT_NAME}</span>
       </div>
 
-      <h1 className="mt-10 text-[28px] leading-[1.15] font-semibold tracking-[-0.015em]">
+      <h1 className="mt-10 text-display font-semibold">
         Página não encontrada
       </h1>
       <p className="mt-2 text-muted">

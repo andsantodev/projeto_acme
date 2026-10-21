@@ -22,7 +22,25 @@
   --color-negative: #c4242a;
   --color-warning: #92400e;
 
+  --color-pill-positive-bg: #dcfae5;
+  --color-pill-positive-ink: #04250e;
+  --color-pill-negative-bg: #ffedea;
+  --color-pill-negative-ink: #831c1e;
+  --color-pill-warning-bg: #fffbeb;
+  --color-pill-warning-ink: #92400e;
+  --color-pill-neutral-bg: #ebedee;
+  --color-pill-neutral-ink: #353736;
+
   --font-sans: var(--font-plex-sans);
+
+  --text-brand: 15px;
+  --text-brand--line-height: 20px;
+  --text-title: 22px;
+  --text-title--line-height: 1.2;
+  --text-title--letter-spacing: -0.01em;
+  --text-display: 28px;
+  --text-display--line-height: 1.15;
+  --text-display--letter-spacing: -0.015em;
 
   --radius-card: 8px;
   --radius-control: 6px;

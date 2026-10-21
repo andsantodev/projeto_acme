@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import { EmptyNotice } from "@/components/app-shell/empty-notice";
 import { PageIntro } from "@/components/app-shell/page-intro";
+import { EmptyState } from "@/components/ui/states";
 
 export const metadata: Metadata = {
   title: "Meus chamados",
@@ -15,7 +15,7 @@ export default function MyTicketsPage() {
         title="Meus chamados"
         description="Chamados abertos por você e o status de cada um."
       />
-      <EmptyNotice
+      <EmptyState
         action={
           <Link
             className="font-medium text-ink underline underline-offset-[3px]"
@@ -24,9 +24,8 @@ export default function MyTicketsPage() {
             Ir para o assistente
           </Link>
         }
-      >
-        Você ainda não abriu nenhum chamado.
-      </EmptyNotice>
+        message="Você ainda não abriu nenhum chamado."
+      />
     </>
   );
 }

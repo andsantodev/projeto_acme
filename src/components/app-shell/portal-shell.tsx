@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 
 import { ProductMark } from "@/components/app-shell/product-mark";
 import { PortalNav } from "@/components/app-shell/portal-nav";
+import { Badge } from "@/components/ui/badge";
 import { homeRouteFor, navigationFor } from "@/lib/navigation";
 import { PRODUCT_NAME } from "@/lib/product";
 import { roleLabel } from "@/lib/user-label";
@@ -23,11 +24,11 @@ export function PortalShell({
           href={homeRouteFor(user.role)}
         >
           <ProductMark />
-          <span className="text-[15px] font-semibold">{PRODUCT_NAME}</span>
+          <span className="text-brand font-semibold">{PRODUCT_NAME}</span>
         </Link>
-        <p className="flex items-baseline gap-2">
+        <p className="flex items-center gap-2">
           <span className="font-medium">{user.name}</span>
-          <span className="text-xs text-muted">{roleLabel(user)}</span>
+          <Badge>{roleLabel(user)}</Badge>
         </p>
       </header>
 
