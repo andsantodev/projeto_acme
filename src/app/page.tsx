@@ -1,5 +1,10 @@
 import { redirect } from "next/navigation";
 
-export default function RootPage() {
-  redirect("/login");
+import { homeRouteFor } from "@/lib/navigation";
+import { getCurrentUser } from "@/services/current-user";
+
+export default async function RootPage() {
+  const user = await getCurrentUser();
+
+  redirect(user ? homeRouteFor(user.role) : "/login");
 }

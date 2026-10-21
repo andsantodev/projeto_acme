@@ -4,9 +4,11 @@ import type { ReactNode } from "react";
 import { ProductMark } from "@/components/app-shell/product-mark";
 import { PortalNav } from "@/components/app-shell/portal-nav";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { homeRouteFor, navigationFor } from "@/lib/navigation";
 import { PRODUCT_NAME } from "@/lib/product";
 import { roleLabel } from "@/lib/user-label";
+import { logoutAction } from "@/services/auth-actions";
 import type { AppUser } from "@/types/user";
 
 export function PortalShell({
@@ -26,10 +28,18 @@ export function PortalShell({
           <ProductMark />
           <span className="text-brand font-semibold">{PRODUCT_NAME}</span>
         </Link>
-        <p className="flex items-center gap-2">
-          <span className="font-medium">{user.name}</span>
-          <Badge>{roleLabel(user)}</Badge>
-        </p>
+
+        <div className="flex items-center gap-3">
+          <p className="flex items-center gap-2">
+            <span className="font-medium">{user.name}</span>
+            <Badge>{roleLabel(user)}</Badge>
+          </p>
+          <form action={logoutAction}>
+            <Button type="submit" variant="ghost">
+              Sair
+            </Button>
+          </form>
+        </div>
       </header>
 
       <div className="grid min-h-[calc(100svh-3rem)] grid-cols-[228px_minmax(0,1fr)] max-[860px]:grid-cols-1 max-[860px]:grid-rows-[auto_minmax(0,1fr)]">

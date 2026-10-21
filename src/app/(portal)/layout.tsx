@@ -1,10 +1,14 @@
 import type { ReactNode } from "react";
 
 import { PortalShell } from "@/components/app-shell/portal-shell";
-import { getCurrentUser } from "@/services/current-user";
+import { requireUser } from "@/services/current-user";
 
-export default function PortalLayout({ children }: { children: ReactNode }) {
-  const user = getCurrentUser();
+export default async function PortalLayout({
+  children,
+}: {
+  children: ReactNode;
+}) {
+  const user = await requireUser();
 
   return <PortalShell user={user}>{children}</PortalShell>;
 }

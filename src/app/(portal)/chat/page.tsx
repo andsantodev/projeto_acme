@@ -1,13 +1,23 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 
 import { PageIntro } from "@/components/app-shell/page-intro";
 import { EmptyState } from "@/components/ui/states";
+import { homeRouteFor } from "@/lib/navigation";
+import { canAccess } from "@/lib/route-access";
+import { requireUser } from "@/services/current-user";
 
 export const metadata: Metadata = {
   title: "Assistente",
 };
 
-export default function ChatPage() {
+export default async function ChatPage() {
+  const user = await requireUser();
+
+  if (!canAccess(user.role, "assistant")) {
+    redirect(homeRouteFor(user.role));
+  }
+
   return (
     <>
       <PageIntro
