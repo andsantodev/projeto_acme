@@ -10,7 +10,8 @@
     "lint": "eslint . --max-warnings 0",
     "test": "vitest run",
     "verify": "pnpm typecheck && pnpm lint && pnpm test",
-    "verify:rls": "node --env-file=.env.local scripts/verify-rls.mjs"
+    "verify:rls": "node --env-file=.env.local scripts/verify-rls.mjs",
+    "verify:knowledge": "node --env-file=.env.local scripts/verify-knowledge.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",
