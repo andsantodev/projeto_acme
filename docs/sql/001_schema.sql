@@ -1,5 +1,5 @@
 -- Acme Portal — DDL de referência.
--- Aplicar SEMPRE pelo MCP do Supabase, no projeto "Supabase do portal" (<project-ref>).
+-- Aplicar SEMPRE pelo MCP do Supabase, no projeto Supabase compartilhado (<project-ref>).
 -- Regra: apenas objetos com prefixo acme_. Nada fora disso pode ser lido ou alterado.
 
 -- ---------------------------------------------------------------------------

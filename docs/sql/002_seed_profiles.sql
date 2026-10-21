@@ -1,7 +1,7 @@
 -- Acme Portal — seed dos três perfis de demonstração.
 -- Pré-requisito: criar os usuários no painel do Supabase (Authentication > Users),
 -- com e-mail confirmado, ANTES de rodar este script.
--- Executar pelo MCP do Supabase ou pelo SQL Editor do projeto "Supabase do portal".
+-- Executar pelo MCP do Supabase ou pelo SQL Editor do projeto Supabase compartilhado.
 
 insert into public.acme_profiles (id, role, category, display_name)
 select u.id, 'colaborador', null, 'Ana Souza'

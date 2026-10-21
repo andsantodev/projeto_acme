@@ -32,7 +32,6 @@
         0,
         0
       ],
-      "id": "8ab91ae2-4f6b-40fe-afd6-fc9e65610b98",
       "name": "Formulário de remoção"
     },
     {
@@ -61,7 +60,6 @@
         220,
         0
       ],
-      "id": "adf6cc0a-651f-4a23-befd-931aff4eee85",
       "name": "Preparar dados"
     },
     {
@@ -78,7 +76,6 @@
         440,
         0
       ],
-      "id": "18c8f5e9-f150-410d-9c15-2af44801ade7",
       "name": "Calcular hash da senha"
     },
     {
@@ -111,7 +108,6 @@
         660,
         0
       ],
-      "id": "cc5c88ee-c68e-4690-a0e2-7a8cab16bbd0",
       "name": "Senha correta?"
     },
     {
@@ -145,7 +141,6 @@
         880,
         0
       ],
-      "id": "6f71518e-c63f-4357-ae5f-261226f9c9ce",
       "name": "Remover um arquivo?"
     },
     {
@@ -161,14 +156,7 @@
         1100,
         -140
       ],
-      "id": "fa0053bb-083f-453e-9f37-c4f3d937e464",
-      "name": "Remover arquivo",
-      "credentials": {
-        "supabaseApi": {
-          "id": "<credential-id>",
-          "name": "Supabase do portal"
-        }
-      }
+      "name": "Remover arquivo"
     },
     {
       "parameters": {
@@ -183,14 +171,7 @@
         1100,
         140
       ],
-      "id": "9112304e-c09d-4af0-8681-aed51ae39c24",
-      "name": "Limpar base inteira",
-      "credentials": {
-        "supabaseApi": {
-          "id": "<credential-id>",
-          "name": "Supabase do portal"
-        }
-      }
+      "name": "Limpar base inteira"
     },
     {
       "parameters": {},
@@ -200,7 +181,6 @@
         880,
         220
       ],
-      "id": "ad40ab3c-2364-47ae-8cea-a3e950ef2c2d",
       "name": "Senha inválida - encerrar"
     },
     {
@@ -215,7 +195,6 @@
         -260,
         -240
       ],
-      "id": "9d6d6361-9513-4802-92fb-c7b26464f6fc",
       "name": "Nota 1"
     },
     {
@@ -230,7 +209,6 @@
         180,
         -240
       ],
-      "id": "1b68c25b-07bd-47eb-ac2a-76b225c8551f",
       "name": "Nota 2"
     },
     {
@@ -245,7 +223,6 @@
         800,
         -240
       ],
-      "id": "9c6b47e5-8859-45c3-9345-da791ef241f8",
       "name": "Nota 3"
     }
   ],

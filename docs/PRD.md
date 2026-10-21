@@ -82,8 +82,8 @@ Um atendente que tente acessar `/chat` ou `/meus-chamados` é redirecionado para
 
 **Base de conhecimento (RAG)**
 - RF-18: Os documentos da Acme são cinco arquivos Markdown (`.md`) fictícios, versionados no repositório em `content/knowledge/`: acessos, benefícios, férias, onboarding e sobre a empresa. O repositório é apenas o local de armazenamento dos originais; nada em produção lê o GitHub.
-- RF-19: Um workflow do n8n hospedado (`Acme - Upload de documentos`) recebe o upload dos `.md` por formulário, exige uma senha conferida dentro do workflow e grava em `acme_documents_vec` no Supabase. Antes de inserir, ele apaga apenas os trechos cujas fontes (`metadata.source`) estão no envio, então um documento novo é adicionado sem reenviar os demais e um arquivo com o mesmo nome é substituído. Um segundo workflow (`Acme - Remover documento`) exclui um documento pelo nome ou limpa a base inteira, com a mesma senha. O texto é dividido em trechos, os embeddings são gerados e a gravação usa a credencial `Supabase do portal`. É executado sob demanda, nunca pelo painel do portal.
-- RF-20: Um workflow do n8n hospedado (`Acme - Consulta RAG`) recebe a pergunta por webhook (segredo em header), faz busca vetorial (`topK` 4) na base e usa o modelo `deepseek/deepseek-v4.1-flash` para responder apenas com base nos trechos recuperados, devolvendo o contrato JSON da seção 7.1. Sem trecho relevante, devolve `grounded: false` sem chamar o modelo. Os dois workflows são cópias dos fluxos de referência do autor ("fluxo de referencia do autor" e "fluxo de referencia do autor"), que não devem ser alterados.
+- RF-19: Um workflow do n8n hospedado (`Acme - Upload de documentos`) recebe o upload dos `.md` por formulário, exige uma senha conferida dentro do workflow e grava em `acme_documents_vec` no Supabase. Antes de inserir, ele apaga apenas os trechos cujas fontes (`metadata.source`) estão no envio, então um documento novo é adicionado sem reenviar os demais e um arquivo com o mesmo nome é substituído. Um segundo workflow (`Acme - Remover documento`) exclui um documento pelo nome ou limpa a base inteira, com a mesma senha. O texto é dividido em trechos, os embeddings são gerados e a gravação usa a credencial Supabase do portal. É executado sob demanda, nunca pelo painel do portal.
+- RF-20: Um workflow do n8n hospedado (`Acme - Consulta RAG`) recebe a pergunta por webhook (segredo em header), faz busca vetorial (`topK` 4) na base e usa o modelo `deepseek/deepseek-v4.1-flash` para responder apenas com base nos trechos recuperados, devolvendo o contrato JSON da seção 7.1. Sem trecho relevante, devolve `grounded: false` sem chamar o modelo. Os dois workflows são cópias dos fluxos de referência do autor, que não devem ser alterados.
 
 ## 7. Requisitos não-funcionais
 
@@ -118,7 +118,7 @@ Timeouts, `5xx` e respostas fora desse formato são tratados como estado de erro
 - O webhook de consulta do n8n exige segredo em header, validado no workflow, e só é chamado pelo servidor do Next.
 - Entradas validadas no servidor (limites de tamanho, categoria, status). Saída renderizada pelo JSX, sem HTML injetado.
 - O assistente é instruído a responder só sobre os documentos da Acme, sem executar ações. As fontes exibidas vêm do workflow, não do texto livre do modelo.
-- Nenhum segredo, chave ou dado de outros projetos no repositório. O banco "Supabase do portal" é compartilhado com outros projetos: o portal só pode criar e alterar objetos com o prefixo `acme_`.
+- Nenhum segredo, chave ou dado de outros projetos no repositório. O banco é compartilhado com outros projetos do autor: o portal só pode criar e alterar objetos com o prefixo `acme_`.
 
 **Custo**
 - O chat exige login.
@@ -126,9 +126,9 @@ Timeouts, `5xx` e respostas fora desse formato são tratados como estado de erro
 - Modelo de chat `deepseek/deepseek-v4.1-flash` e embeddings `openai/text-embedding-3-small`, ambos via OpenRouter, escolhidos por custo.
 
 **Isolamento de dados**
-- Todas as tabelas do portal usam o prefixo `acme_` no schema `public` do projeto Supabase "Supabase do portal". As migrações do portal só alteram objetos `acme_`.
+- Todas as tabelas do portal usam o prefixo `acme_` no schema `public` do projeto Supabase compartilhado. As migrações do portal só alteram objetos `acme_`.
 - A função de busca vetorial chama-se `acme_match_documents` (o padrão `match_documents` colidiria com outros projetos no mesmo banco).
-- Os workflows do portal usam a credencial Supabase existente chamada `Supabase do portal` no n8n, e a credencial OpenRouter `Base URL OpenRouter`.
+- Os workflows do portal usam a credencial Supabase do portal no n8n, e a credencial OpenRouter `Base URL OpenRouter`.
 
 **Qualidade e testes**
 - TypeScript com checagem estrita e `no-explicit-any` como erro de lint.
@@ -161,7 +161,7 @@ Timeouts, `5xx` e respostas fora desse formato são tratados como estado de erro
 - **Modelo com raciocínio:** `deepseek-v4.1-flash` pode adicionar latência. Mitigação: `reasoning_effort: low`, `temperature: 0.2`, timeout de 30s e validação de latência na execução de teste do workflow.
 - **Embeddings no OpenRouter:** o ID do modelo precisa do prefixo do provedor (`openai/text-embedding-3-small`). Se a chamada falhar, o plano B é uma chave OpenAI dedicada apenas para embeddings, registrada como decisão no PRD.
 - **Custo do provedor de IA:** uso indevido da demo pode consumir crédito. Mitigação: login obrigatório e limite diário por usuário.
-- **Banco compartilhado:** o projeto Supabase contém tabelas de outros projetos do autor. Mitigação: prefixo `acme_`, RLS, credencial `Supabase do portal` e RPC com nome próprio.
+- **Banco compartilhado:** o projeto Supabase contém tabelas de outros projetos do autor. Mitigação: prefixo `acme_`, RLS, credencial Supabase do portal e RPC com nome próprio.
 - **Código gerado por IA:** risco de falhas de segurança e de estrutura. Mitigação: revisão do autor de cada feature, com testes e verificação antes de marcar como concluída.
 - **Escopo:** acrescentar recursos (anexos, e-mail real, histórico) atrasa a entrega. Eles estão fora do escopo.
 - **Credenciais da demo públicas:** podem ser abusadas. Mitigação: permissões mínimas e limite diário do chat.
@@ -185,7 +185,7 @@ Timeouts, `5xx` e respostas fora desse formato são tratados como estado de erro
 | Limite do chat | 10/dia por usuário, America/Sao_Paulo, tentativas com erro contam |
 | Ingestão | Formulário no n8n com senha, limpeza prévia e upsert em `acme_documents_vec` |
 | Consulta | Busca vetorial (topK 4) + LLM, contrato JSON com `sources` e `grounded` |
-| Banco | Projeto "Supabase do portal", prefixo `acme_` em `public`, pgvector já instalado |
+| Banco | Projeto Supabase compartilhado, prefixo `acme_` em `public`, pgvector já instalado |
 | Modelos | Chat `deepseek/deepseek-v4.1-flash`; embeddings `openai/text-embedding-3-small` |
 | Testes E2E | Contra o Supabase hospedado, sem Docker, dados marcados `[e2e]` |
 | Estilo | Tailwind + skill `design-taste-frontend` |
