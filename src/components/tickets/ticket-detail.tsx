@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { AnswerForm } from "@/components/tickets/answer-form";
 import { CloseTicketButton } from "@/components/tickets/close-ticket-button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -17,11 +18,13 @@ import type { TicketDetail } from "@/types/ticket";
 export function TicketDetailView({
   backHref,
   backLabel,
+  canAnswer,
   owner,
   ticket,
 }: {
   backHref: "/meus-chamados" | "/fila";
   backLabel: string;
+  canAnswer: boolean;
   owner: boolean;
   ticket: TicketDetail;
 }) {
@@ -52,6 +55,12 @@ export function TicketDetailView({
       <Card title="Descrição">
         <p className="whitespace-pre-line">{ticket.description}</p>
       </Card>
+
+      {canAnswer ? (
+        <Card title="Responder ao colaborador">
+          <AnswerForm ticketId={ticket.id} />
+        </Card>
+      ) : null}
 
       {answerVisible ? (
         <Card title="Resposta do atendente">

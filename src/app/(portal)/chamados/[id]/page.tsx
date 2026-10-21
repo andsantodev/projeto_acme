@@ -38,6 +38,11 @@ export default async function TicketDetailPage({
   }
 
   const attendant = user.role === "atendente";
+  const canAnswer =
+    attendant &&
+    result.ticket.answer === null &&
+    (result.ticket.status === "aberto" ||
+      result.ticket.status === "em_andamento");
 
   return (
     <TicketDetailView
@@ -45,6 +50,7 @@ export default async function TicketDetailPage({
       backLabel={
         attendant ? "Voltar para a fila" : "Voltar para meus chamados"
       }
+      canAnswer={canAnswer}
       owner={result.ticket.userId === user.id}
       ticket={result.ticket}
     />

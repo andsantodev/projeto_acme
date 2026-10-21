@@ -240,4 +240,33 @@ assert(
   `HTTP ${result.status} ${JSON.stringify(result.body)}`,
 );
 
+const tiTicket = await rest(
+  sessions.ti.token,
+  "acme_tickets?select=id&category=eq.ti&status=in.(aberto,em_andamento)&limit=1",
+);
+assert(
+  "há chamado de TI na fila para o teste de resposta cruzada",
+  Array.isArray(tiTicket.body) && tiTicket.body.length === 1,
+  JSON.stringify(tiTicket.body),
+);
+
+result = await rest(
+  sessions.rh.token,
+  `acme_tickets?id=eq.${tiTicket.body[0].id}`,
+  {
+    method: "PATCH",
+    headers: { Prefer: "return=representation" },
+    body: JSON.stringify({
+      answer: "tentativa de resposta por outra categoria",
+      answered_at: new Date().toISOString(),
+      status: "respondido",
+    }),
+  },
+);
+assert(
+  "atendente de RH não responde chamado de TI",
+  Array.isArray(result.body) && result.body.length === 0,
+  JSON.stringify(result.body),
+);
+
 console.log("\nverify:rls passou — isolamento por usuário e por categoria confirmado.");

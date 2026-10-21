@@ -2,6 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 
+import { validateAnswer } from "@/lib/answer";
+
 import { getCurrentUser } from "./current-user";
 import { createSupabaseServerClient } from "./supabase/server";
 
@@ -69,4 +71,59 @@ export async function closeTicketAction(
   revalidatePath("/meus-chamados");
 
   return { ok: true };
+}
+
+export type AnswerTicketState = {
+  error?: string;
+  fieldError?: string;
+};
+
+export async function answerTicketAction(
+  _previousState: AnswerTicketState,
+  formData: FormData,
+): Promise<AnswerTicketState> {
+  const user = await getCurrentUser();
+
+  if (!user) {
+    return { error: "Sua sessão expirou. Entre novamente." };
+  }
+
+  if (user.role !== "atendente") {
+    return { error: "Só atendentes podem responder chamados." };
+  }
+
+  const ticketId = String(formData.get("ticketId") ?? "");
+  const parsed = validateAnswer(String(formData.get("answer") ?? ""));
+
+  if (!parsed.ok) {
+    return { fieldError: parsed.message };
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("acme_tickets")
+    .update({
+      answer: parsed.value,
+      answered_at: new Date().toISOString(),
+      status: "respondido",
+    })
+    .eq("id", ticketId)
+    .is("answer", null)
+    .select("id");
+
+  if (error) {
+    return { error: "Não foi possível salvar a resposta agora. Tente de novo." };
+  }
+
+  if (!data || data.length === 0) {
+    return {
+      error:
+        "Este chamado já foi respondido ou não está disponível para você.",
+    };
+  }
+
+  revalidatePath(`/chamados/${ticketId}`);
+  revalidatePath("/fila");
+
+  return {};
 }

@@ -1,7 +1,10 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
-vi.mock("@/services/ticket-actions", () => ({ closeTicketAction: vi.fn() }));
+vi.mock("@/services/ticket-actions", () => ({
+  answerTicketAction: vi.fn(),
+  closeTicketAction: vi.fn(),
+}));
 
 import { SIMULATION_NOTICE } from "@/lib/ticket-status";
 import type { TicketDetail } from "@/types/ticket";
@@ -23,11 +26,13 @@ const ticket: TicketDetail = {
 function renderDetail(
   overrides: Partial<TicketDetail> = {},
   owner = true,
+  canAnswer = false,
 ) {
   return render(
     <TicketDetailView
       backHref="/meus-chamados"
       backLabel="Voltar para meus chamados"
+      canAnswer={canAnswer}
       owner={owner}
       ticket={{ ...ticket, ...overrides }}
     />,
@@ -84,5 +89,27 @@ describe("TicketDetailView", () => {
     expect(
       screen.getByRole("link", { name: "Voltar para meus chamados" }),
     ).toHaveAttribute("href", "/meus-chamados");
+  });
+
+  it("shows the answer form only when the attendant can answer", () => {
+    renderDetail({ status: "em_andamento", answer: null, answeredAt: null }, false, true);
+
+    expect(
+      screen.getByRole("heading", { name: "Responder ao colaborador" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Responder" }),
+    ).toBeInTheDocument();
+  });
+
+  it("hides the answer form when the ticket is already answered", () => {
+    renderDetail({ status: "respondido" }, false, false);
+
+    expect(
+      screen.queryByRole("heading", { name: "Responder ao colaborador" }),
+    ).toBeNull();
+    expect(
+      screen.queryByRole("button", { name: "Responder" }),
+    ).toBeNull();
   });
 });
