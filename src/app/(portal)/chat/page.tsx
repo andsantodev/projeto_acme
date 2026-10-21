@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
 import { PageIntro } from "@/components/app-shell/page-intro";
-import { EmptyState } from "@/components/ui/states";
+import { ChatPanel } from "@/components/chat/chat-panel";
 import { homeRouteFor } from "@/lib/navigation";
 import { canAccess } from "@/lib/route-access";
 import { requireUser } from "@/services/current-user";
@@ -24,7 +24,7 @@ export default async function ChatPage() {
         title="Assistente de onboarding"
         description="Respostas a partir dos documentos da empresa, com o documento de origem citado."
       />
-      <EmptyState message="Nenhuma pergunta feita nesta conversa." />
+      <ChatPanel />
     </>
   );
 }

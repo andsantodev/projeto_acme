@@ -8,6 +8,7 @@ const FORBIDDEN_IN_CLIENT_CODE = [
   { pattern: /localStorage/, reason: "token in localStorage" },
   { pattern: /document\.cookie/, reason: "token read from document.cookie" },
   { pattern: /SERVICE_ROLE/, reason: "service role key" },
+  { pattern: /N8N_RAG_SECRET/, reason: "n8n webhook secret" },
 ];
 
 function sourceFiles(dir: string): string[] {
