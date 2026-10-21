@@ -251,13 +251,40 @@ with check (
 
 -- Chamados: só o atendente da categoria atualiza (assumir/responder).
 -- O fechamento pelo colaborador passa pela função acme_close_ticket.
+-- Um chamado fechado não pode ser reaberto pelo atendente (RF-15), e o
+-- atendente só o leva para em_andamento ou respondido.
 create policy acme_tickets_update on public.acme_tickets
 for update to authenticated
 using (
   public.acme_current_role() = 'atendente'
   and category = public.acme_current_category()
+  and status <> 'fechado'
 )
 with check (
   public.acme_current_role() = 'atendente'
   and category = public.acme_current_category()
+  and status in ('em_andamento', 'respondido')
 );
+
+-- ---------------------------------------------------------------------------
+-- 10. Grants: o RLS filtra linhas, não colunas; aqui fica o resto
+-- ---------------------------------------------------------------------------
+
+-- Chamados: o atendente muda status, resposta e data da resposta — nunca o
+-- dono, a categoria, o título ou a descrição da linha.
+revoke insert, update, delete on public.acme_tickets from anon;
+revoke delete on public.acme_tickets from authenticated;
+revoke update on public.acme_tickets from authenticated;
+grant update (status, answer, answered_at) on public.acme_tickets to authenticated;
+
+-- Perfis: escritos só pelo servidor (seed/migração), nunca pelo cliente.
+revoke insert, update, delete on public.acme_profiles from anon, authenticated;
+
+-- Contador diário: nenhum acesso direto, só pela função security definer.
+revoke all on public.acme_chat_usage from anon, authenticated;
+
+-- O Supabase concede ALL por padrão em tabelas novas do schema public; estes
+-- privilégios não fazem sentido aqui (role anônimo não tem policy nenhuma, e
+-- TRUNCATE não passa por RLS).
+revoke all on public.acme_profiles, public.acme_tickets from anon;
+revoke truncate, references, trigger on public.acme_profiles, public.acme_tickets from authenticated;
