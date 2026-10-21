@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRef, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Field } from "@/components/ui/field";
@@ -75,6 +75,15 @@ export function ChatPanel() {
   const [fieldError, setFieldError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const nextId = useRef(0);
+  const transcriptRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const transcript = transcriptRef.current;
+
+    if (transcript) {
+      transcript.scrollTop = transcript.scrollHeight;
+    }
+  }, [messages.length, pending, failure]);
 
   function send(raw: string) {
     const parsed = validateQuestion(raw);
@@ -132,10 +141,11 @@ export function ChatPanel() {
   const isEmpty = messages.length === 0 && !pending && !failure;
 
   return (
-    <div className="flex min-h-[70svh] flex-col gap-6">
+    <div className="flex min-h-0 flex-1 flex-col gap-6">
       <div
         aria-live="polite"
-        className={`flex flex-1 flex-col gap-5 ${isEmpty ? "justify-center" : ""}`}
+        className={`flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto pr-1 ${isEmpty ? "justify-center" : ""}`}
+        ref={transcriptRef}
       >
         {isEmpty ? (
           <EmptyState message="Pergunte sobre acessos, benefícios, férias ou onboarding." />
@@ -177,7 +187,7 @@ export function ChatPanel() {
       </div>
 
       <form
-        className="grid gap-3 border-t border-border pt-4"
+        className="grid shrink-0 gap-3 border-t border-border pt-4"
         onSubmit={(event) => {
           event.preventDefault();
           send(question);

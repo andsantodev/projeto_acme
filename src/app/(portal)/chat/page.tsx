@@ -19,12 +19,14 @@ export default async function ChatPage() {
   }
 
   return (
-    <>
-      <PageIntro
-        title="Assistente de onboarding"
-        description="Respostas a partir dos documentos da empresa, com o documento de origem citado."
-      />
+    <div className="flex min-h-0 flex-1 flex-col">
+      <div className="shrink-0">
+        <PageIntro
+          title="Assistente de onboarding"
+          description="Respostas a partir dos documentos da empresa, com o documento de origem citado."
+        />
+      </div>
       <ChatPanel />
-    </>
+    </div>
   );
 }
