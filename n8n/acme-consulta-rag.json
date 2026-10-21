@@ -1,0 +1,495 @@
+{
+  "name": "Acme - Consulta RAG",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "acme-rag",
+        "responseMode": "responseNode",
+        "options": {},
+        "httpMethod": "POST"
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "0fa3cbb4-3ddc-43af-9107-38e03fe237ca",
+      "name": "Webhook da consulta"
+    },
+    {
+      "parameters": {
+        "action": "hash",
+        "type": "SHA256",
+        "value": "={{ $json.headers[\"x-acme-secret\"] || \"\" }}",
+        "dataPropertyName": "secretHash",
+        "encoding": "hex"
+      },
+      "type": "n8n-nodes-base.crypto",
+      "typeVersion": 1,
+      "position": [
+        220,
+        0
+      ],
+      "id": "218cee31-8ffa-421d-bed9-5c05b057a7d2",
+      "name": "Hash do segredo"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "secret-hash",
+              "leftValue": "={{ $json.secretHash }}",
+              "rightValue": "9e4d3c470fa8a47cf9d5fbc74a62e295e00592d7639c22d5c808c59875dacd32",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        440,
+        0
+      ],
+      "id": "67fb73ec-9aea-4b2e-a5d2-e9bdc2d96a8a",
+      "name": "Segredo valido?"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "question",
+              "name": "question",
+              "value": "={{ $('Webhook da consulta').first().json.body.question }}",
+              "type": "string"
+            },
+            {
+              "id": "history",
+              "name": "history",
+              "value": "={{ $('Webhook da consulta').first().json.body.history }}",
+              "type": "array"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        660,
+        -140
+      ],
+      "id": "15955b95-5134-441c-b1de-ebdc671a2d85",
+      "name": "Normalizar entrada"
+    },
+    {
+      "parameters": {
+        "mode": "load",
+        "tableName": {
+          "__rl": true,
+          "mode": "list",
+          "value": "acme_documents_vec"
+        },
+        "prompt": "={{ $json.question }}",
+        "topK": 4,
+        "options": {
+          "queryName": "acme_match_documents"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1,
+      "position": [
+        880,
+        -140
+      ],
+      "id": "b5999bb7-46d5-4aec-846c-855a6f3d885a",
+      "name": "Buscar trechos",
+      "credentials": {
+        "supabaseApi": {
+          "id": "<credential-id>",
+          "name": "Supabase do portal"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "openai/text-embedding-3-small",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1,
+      "position": [
+        976,
+        336
+      ],
+      "id": "226e2872-076d-4cc3-b1bb-9f354afb26b3",
+      "name": "Embeddings OpenRouter",
+      "credentials": {
+        "openAiApi": {
+          "id": "<credential-id>",
+          "name": "Base URL OpenRouter"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "relevant-score",
+              "leftValue": "={{ $json.score }}",
+              "rightValue": 0.4,
+              "operator": {
+                "type": "number",
+                "operation": "gte"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1100,
+        -140
+      ],
+      "id": "197e5279-970a-4bfd-a9e3-1c9ef15c8553",
+      "name": "Encontrou trechos?"
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "destinationFieldName": "context",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        1320,
+        -240
+      ],
+      "id": "e3d9aa16-a096-40eb-b538-9129b43ef862",
+      "name": "Agrupar trechos"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://openrouter.ai/api/v1/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { \"model\": \"deepseek/deepseek-v4.1-flash\", \"temperature\": 0.2, \"reasoning\": { \"effort\": \"low\" }, \"messages\": [ { \"role\": \"system\", \"content\": \"Voce e o assistente de onboarding da Acme. Responda em portugues do Brasil, em no maximo 3 paragrafos, usando apenas os trechos fornecidos. Cite o nome do documento quando fizer sentido. Se os trechos nao responderem a pergunta, diga que nao encontrou nos documentos da empresa e sugira abrir um chamado.\" }, { \"role\": \"user\", \"content\": \"Pergunta: \" + $('Normalizar entrada').first().json.question + \"\\n\\nTrechos:\\n\" + JSON.stringify($('Agrupar trechos').first().json.context) } ] } }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1540,
+        -240
+      ],
+      "id": "edc29cea-669c-4784-ae55-8623d421f2fe",
+      "name": "Consultar modelo",
+      "credentials": {
+        "openAiApi": {
+          "id": "<credential-id>",
+          "name": "Base URL OpenRouter"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "answer",
+              "name": "answer",
+              "value": "={{ $json.choices[0].message.content }}",
+              "type": "string"
+            },
+            {
+              "id": "sources",
+              "name": "sources",
+              "value": "={{ Object.values($('Agrupar trechos').first().json.context.reduce((acc, item) => { const doc = item.document.metadata.source; if (!acc[doc] || item.score > acc[doc].score) { acc[doc] = { document: doc, excerpt: item.document.pageContent.slice(0, 240), score: item.score }; } return acc; }, {})).map((entry) => ({ document: entry.document, excerpt: entry.excerpt })) }}",
+              "type": "array"
+            },
+            {
+              "id": "grounded",
+              "name": "grounded",
+              "value": true,
+              "type": "boolean"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1760,
+        -240
+      ],
+      "id": "b8029f30-ff02-494b-a34b-fb9cbafea370",
+      "name": "Montar resposta"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"answer\": $json.answer, \"sources\": $json.sources, \"grounded\": $json.grounded } }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1980,
+        -240
+      ],
+      "id": "7b830040-2dcc-4fcc-af6c-be43bb71b475",
+      "name": "Responder resultado"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"answer\": \"Nao encontrei essa informacao nos documentos da empresa. Vale abrir um chamado para o time responsavel.\", \"sources\": [], \"grounded\": false } }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1320,
+        60
+      ],
+      "id": "c3332213-44d9-4f35-9acd-57ea3cf5bb32",
+      "name": "Responder sem base"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"error\": \"unauthorized\" } }}",
+        "options": {
+          "responseCode": 401
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        660,
+        200
+      ],
+      "id": "d1fe2907-6625-4a23-a798-069987acb263",
+      "name": "Responder 401"
+    },
+    {
+      "parameters": {
+        "content": "## Entrada e segredo\nO webhook so aceita POST com o header `x-acme-secret`.\nO node Crypto calcula o SHA-256 do header e o IF compara com o hash fixo: o segredo em texto nao fica no workflow.",
+        "height": 150,
+        "width": 300
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -260,
+        -260
+      ],
+      "id": "57ae2228-cbf2-4bae-b798-c4690f0ee635",
+      "name": "Nota 1"
+    },
+    {
+      "parameters": {
+        "content": "## Busca vetorial\nEmbeddings da pergunta com `openai/text-embedding-3-small` e busca topK 4 via `acme_match_documents` (RPC propria, isolada no banco compartilhado).",
+        "height": 170,
+        "width": 320
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        820,
+        -380
+      ],
+      "id": "421daea6-8772-4267-aafc-84de44fe807f",
+      "name": "Nota 2"
+    },
+    {
+      "parameters": {
+        "content": "## Quando nao ha base\nSe nenhum trecho passa do limiar de similaridade (0.4), responde `grounded:false` com `sources:[]` **sem chamar o modelo** — nada de resposta inventada.",
+        "height": 160,
+        "width": 320
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1040,
+        -380
+      ],
+      "id": "678c6520-bcfd-460b-8d56-b5357414cde7",
+      "name": "Nota 3"
+    },
+    {
+      "parameters": {
+        "content": "## Resposta\nHTTP Request para o OpenRouter (`deepseek/deepseek-v4.1-flash`, temperature 0.2, reasoning.effort low) usando os trechos como contexto.\nA resposta segue o contrato do PRD 7.1: `answer`, `sources[{document, excerpt}]`, `grounded`.",
+        "height": 170,
+        "width": 340
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1500,
+        -380
+      ],
+      "id": "47e3c653-de76-4771-a1e1-e8f4dd891a71",
+      "name": "Nota 4"
+    }
+  ],
+  "connections": {
+    "Webhook da consulta": {
+      "main": [
+        [
+          {
+            "node": "Hash do segredo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Hash do segredo": {
+      "main": [
+        [
+          {
+            "node": "Segredo valido?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Segredo valido?": {
+      "main": [
+        [
+          {
+            "node": "Normalizar entrada",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Responder 401",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalizar entrada": {
+      "main": [
+        [
+          {
+            "node": "Buscar trechos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar trechos": {
+      "main": [
+        [
+          {
+            "node": "Encontrou trechos?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenRouter": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Buscar trechos",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Encontrou trechos?": {
+      "main": [
+        [
+          {
+            "node": "Agrupar trechos",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Responder sem base",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agrupar trechos": {
+      "main": [
+        [
+          {
+            "node": "Consultar modelo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Consultar modelo": {
+      "main": [
+        [
+          {
+            "node": "Montar resposta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Montar resposta": {
+      "main": [
+        [
+          {
+            "node": "Responder resultado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true
+  }
+}
