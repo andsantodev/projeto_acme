@@ -42,7 +42,7 @@ export function PortalShell({
         </div>
       </header>
 
-      <div className="grid h-[calc(100svh-3rem)] grid-cols-[228px_minmax(0,1fr)] max-[860px]:grid-cols-1 max-[860px]:grid-rows-[auto_minmax(0,1fr)]">
+      <div className="grid h-[calc(100svh-3rem)] grid-rows-[minmax(0,1fr)] grid-cols-[228px_minmax(0,1fr)] max-[860px]:grid-cols-1 max-[860px]:grid-rows-[auto_minmax(0,1fr)]">
         <aside className="px-2 py-3 max-[860px]:py-2">
           <PortalNav items={navigationFor(user.role)} />
         </aside>

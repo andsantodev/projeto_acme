@@ -9,3 +9,10 @@ export type TicketSummary = {
   status: TicketStatus;
   createdAt: string;
 };
+
+export type TicketDetail = TicketSummary & {
+  userId: string;
+  description: string;
+  answer: string | null;
+  answeredAt: string | null;
+};

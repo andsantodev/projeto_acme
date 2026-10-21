@@ -5,6 +5,7 @@ import {
   TICKET_DESCRIPTION_MIN,
   TICKET_TITLE_MAX,
   TICKET_TITLE_MIN,
+  isTicketId,
   titleFromQuestion,
   validateTicketInput,
 } from "./ticket";
@@ -96,5 +97,18 @@ describe("titleFromQuestion", () => {
   it("keeps a short question and trims the edges", () => {
     expect(titleFromQuestion("  Como peço acesso?  ")).toBe("Como peço acesso?");
     expect(titleFromQuestion("")).toBe("");
+  });
+});
+
+describe("isTicketId", () => {
+  it("accepts a uuid in any case", () => {
+    expect(isTicketId("0f7f7cab-5ccd-465f-95f9-22aef4cffa58")).toBe(true);
+    expect(isTicketId("0F7F7CAB-5CCD-465F-95F9-22AEF4CFFA58")).toBe(true);
+  });
+
+  it("rejects anything that is not a uuid", () => {
+    expect(isTicketId("42")).toBe(false);
+    expect(isTicketId("nao-existe")).toBe(false);
+    expect(isTicketId("0f7f7cab-5ccd-465f-95f9")).toBe(false);
   });
 });

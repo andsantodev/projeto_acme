@@ -28,8 +28,8 @@ export default async function MyTicketsPage() {
   const result = await listMyTickets();
 
   return (
-    <>
-      <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
+    <div className="flex shrink-0 flex-col gap-6">
+      <div className="flex flex-wrap items-start justify-between gap-4">
         <PageIntro
           title="Meus chamados"
           description="Chamados abertos por você e o status de cada um."
@@ -67,6 +67,6 @@ export default async function MyTicketsPage() {
       ) : (
         <TicketList tickets={result.tickets} />
       )}
-    </>
+    </div>
   );
 }

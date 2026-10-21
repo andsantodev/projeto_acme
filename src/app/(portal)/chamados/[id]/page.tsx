@@ -1,7 +1,12 @@
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 
-import { PageIntro } from "@/components/app-shell/page-intro";
-import { Card } from "@/components/ui/card";
+import { RefreshButton } from "@/components/app-shell/refresh-button";
+import { TicketDetailView } from "@/components/tickets/ticket-detail";
+import { ErrorState } from "@/components/ui/states";
+import { isTicketId } from "@/lib/ticket";
+import { requireUser } from "@/services/current-user";
+import { getTicket } from "@/services/tickets";
 
 export const metadata: Metadata = {
   title: "Chamado",
@@ -10,19 +15,38 @@ export const metadata: Metadata = {
 export default async function TicketDetailPage({
   params,
 }: PageProps<"/chamados/[id]">) {
+  const user = await requireUser();
   const { id } = await params;
 
-  return (
-    <>
-      <PageIntro
-        title="Chamado"
-        description="Acompanhe a resposta do atendente e feche o chamado quando estiver resolvido."
+  if (!isTicketId(id)) {
+    notFound();
+  }
+
+  const result = await getTicket(id);
+
+  if (!result.ok) {
+    return (
+      <ErrorState
+        action={<RefreshButton />}
+        message="Não foi possível carregar o chamado."
       />
-      <Card>
-        <p className="text-muted">
-          Identificador <span className="text-ink">{id}</span>
-        </p>
-      </Card>
-    </>
+    );
+  }
+
+  if (!result.ticket) {
+    notFound();
+  }
+
+  const attendant = user.role === "atendente";
+
+  return (
+    <TicketDetailView
+      backHref={attendant ? "/fila" : "/meus-chamados"}
+      backLabel={
+        attendant ? "Voltar para a fila" : "Voltar para meus chamados"
+      }
+      owner={result.ticket.userId === user.id}
+      ticket={result.ticket}
+    />
   );
 }

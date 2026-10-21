@@ -21,6 +21,9 @@ export const TICKET_CATEGORY_LABELS: Record<TicketCategory, string> = {
   rh: "RH",
 };
 
+export const SIMULATION_NOTICE =
+  "Simulação: em um cenário real, esta resposta também seria enviada por e-mail";
+
 const dateFormatter = new Intl.DateTimeFormat("pt-BR", {
   day: "2-digit",
   month: "2-digit",
@@ -30,4 +33,18 @@ const dateFormatter = new Intl.DateTimeFormat("pt-BR", {
 
 export function formatTicketDate(isoDate: string): string {
   return dateFormatter.format(new Date(isoDate));
+}
+
+export function showsAnswer(status: TicketStatus): boolean {
+  return status === "respondido" || status === "fechado";
+}
+
+export function canCloseTicket({
+  owner,
+  status,
+}: {
+  owner: boolean;
+  status: TicketStatus;
+}): boolean {
+  return owner && status === "respondido";
 }

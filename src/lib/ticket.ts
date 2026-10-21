@@ -82,3 +82,9 @@ export function validateTicketInput(input: TicketInput): Validation {
 export function titleFromQuestion(question: string): string {
   return question.trim().slice(0, TICKET_TITLE_MAX);
 }
+
+const TICKET_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export function isTicketId(value: string): boolean {
+  return TICKET_ID.test(value);
+}

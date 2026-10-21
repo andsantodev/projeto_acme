@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { TicketStatus, TicketSummary } from "@/types/ticket";
+import type { TicketDetail, TicketStatus, TicketSummary } from "@/types/ticket";
 import type { TicketCategory } from "@/types/user";
 
 import { createSupabaseServerClient } from "./supabase/server";
@@ -25,6 +25,22 @@ export type CreatedTicket = { ok: true; id: string } | { ok: false };
 export type TicketListResult =
   | { ok: true; tickets: TicketSummary[] }
   | { ok: false };
+
+export type TicketDetailResult =
+  | { ok: true; ticket: TicketDetail | null }
+  | { ok: false };
+
+type TicketDetailRow = {
+  id: string;
+  user_id: string;
+  category: TicketCategory;
+  status: TicketStatus;
+  title: string;
+  description: string;
+  answer: string | null;
+  answered_at: string | null;
+  created_at: string;
+};
 
 export async function insertTicket(ticket: NewTicket): Promise<CreatedTicket> {
   const supabase = await createSupabaseServerClient();
@@ -67,5 +83,39 @@ export async function listMyTickets(): Promise<TicketListResult> {
       status: row.status,
       createdAt: row.created_at,
     })),
+  };
+}
+
+export async function getTicket(id: string): Promise<TicketDetailResult> {
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("acme_tickets")
+    .select(
+      "id, user_id, category, status, title, description, answer, answered_at, created_at",
+    )
+    .eq("id", id)
+    .maybeSingle<TicketDetailRow>();
+
+  if (error) {
+    return { ok: false };
+  }
+
+  if (!data) {
+    return { ok: true, ticket: null };
+  }
+
+  return {
+    ok: true,
+    ticket: {
+      id: data.id,
+      userId: data.user_id,
+      category: data.category,
+      status: data.status,
+      title: data.title,
+      description: data.description,
+      answer: data.answer,
+      answeredAt: data.answered_at,
+      createdAt: data.created_at,
+    },
   };
 }
