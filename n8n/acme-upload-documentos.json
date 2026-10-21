@@ -28,7 +28,6 @@
         0,
         -48
       ],
-      "id": "e4fe2c2d-8a83-465e-a83c-10dc3269ea5b",
       "name": "Formulário de upload"
     },
     {
@@ -45,7 +44,6 @@
         448,
         -48
       ],
-      "id": "67d03b98-0b50-49fd-b82f-d0590c56944d",
       "name": "Calcular hash da senha"
     },
     {
@@ -61,14 +59,7 @@
         880,
         -140
       ],
-      "id": "31ccd036-6e24-44bc-8bb7-c2992eb2b164",
-      "name": "Limpar fontes enviadas",
-      "credentials": {
-        "supabaseApi": {
-          "id": "<credential-id>",
-          "name": "Supabase do portal"
-        }
-      }
+      "name": "Limpar fontes enviadas"
     },
     {
       "parameters": {
@@ -80,7 +71,6 @@
         1100,
         -140
       ],
-      "id": "7e414149-61ff-4bdd-9052-66cd95714c86",
       "name": "Separar arquivos"
     },
     {
@@ -94,7 +84,6 @@
         1320,
         -140
       ],
-      "id": "2ae397d2-b057-4d5e-ab0d-6ff20b313e05",
       "name": "Extrair texto"
     },
     {
@@ -113,14 +102,7 @@
         1540,
         -140
       ],
-      "id": "4a15defb-df56-42f0-a0dc-13cb7c5758e7",
-      "name": "Gravar na base vetorial",
-      "credentials": {
-        "supabaseApi": {
-          "id": "<credential-id>",
-          "name": "Supabase do portal"
-        }
-      }
+      "name": "Gravar na base vetorial"
     },
     {
       "parameters": {
@@ -133,14 +115,7 @@
         1808,
         96
       ],
-      "id": "d72f112c-79f7-47e4-8d22-32724aafb16d",
-      "name": "Embeddings OpenRouter",
-      "credentials": {
-        "openAiApi": {
-          "id": "<credential-id>",
-          "name": "Base URL OpenRouter"
-        }
-      }
+      "name": "Embeddings OpenRouter"
     },
     {
       "parameters": {
@@ -165,7 +140,6 @@
         1936,
         96
       ],
-      "id": "f28baa09-a122-4c3d-88c5-a393c393ef1b",
       "name": "Carregar documento"
     },
     {
@@ -179,7 +153,6 @@
         2016,
         304
       ],
-      "id": "3722f35b-b5b3-4e4a-acd8-748b9beed7b1",
       "name": "Dividir em trechos"
     },
     {
@@ -190,7 +163,6 @@
         1120,
         48
       ],
-      "id": "d6946993-0ded-4266-a524-847f995ae737",
       "name": "Senha inválida - encerrar"
     },
     {
@@ -223,7 +195,6 @@
         896,
         -48
       ],
-      "id": "fd1a9ebe-bd37-44f2-9ad9-5157f3b2011f",
       "name": "Senha correta?"
     },
     {
@@ -246,7 +217,6 @@
         220,
         0
       ],
-      "id": "c844e619-b2d2-447d-bfd2-bc22556d3427",
       "name": "Preparar senha"
     },
     {
@@ -261,7 +231,6 @@
         -260,
         -280
       ],
-      "id": "d48454c2-0cd0-49ac-af32-1ec4af191a33",
       "name": "Nota 1"
     },
     {
@@ -276,7 +245,6 @@
         180,
         -280
       ],
-      "id": "91754dd8-36e2-4a55-a5ba-37a9474796cd",
       "name": "Nota 2"
     },
     {
@@ -291,7 +259,6 @@
         800,
         -300
       ],
-      "id": "354f2f91-2f2b-47c0-988f-ce8d90765ec3",
       "name": "Nota 3"
     },
     {
@@ -306,7 +273,6 @@
         1020,
         -300
       ],
-      "id": "82aed1e4-195f-48f0-bfb8-1ff908d97b1b",
       "name": "Nota 4"
     },
     {
@@ -321,7 +287,6 @@
         1460,
         -300
       ],
-      "id": "f1b04e9a-5424-4ced-8918-368e6065ece3",
       "name": "Nota 5"
     },
     {
@@ -336,7 +301,6 @@
         800,
         140
       ],
-      "id": "575e1ad8-8e19-458f-8543-a05f1b17b89a",
       "name": "Nota 6"
     }
   ],

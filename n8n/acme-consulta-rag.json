@@ -14,7 +14,6 @@
         0,
         0
       ],
-      "id": "0fa3cbb4-3ddc-43af-9107-38e03fe237ca",
       "name": "Webhook da consulta"
     },
     {
@@ -31,7 +30,6 @@
         220,
         0
       ],
-      "id": "218cee31-8ffa-421d-bed9-5c05b057a7d2",
       "name": "Hash do segredo"
     },
     {
@@ -64,7 +62,6 @@
         440,
         0
       ],
-      "id": "67fb73ec-9aea-4b2e-a5d2-e9bdc2d96a8a",
       "name": "Segredo valido?"
     },
     {
@@ -93,7 +90,6 @@
         660,
         -140
       ],
-      "id": "15955b95-5134-441c-b1de-ebdc671a2d85",
       "name": "Normalizar entrada"
     },
     {
@@ -116,14 +112,7 @@
         880,
         -140
       ],
-      "id": "b5999bb7-46d5-4aec-846c-855a6f3d885a",
-      "name": "Buscar trechos",
-      "credentials": {
-        "supabaseApi": {
-          "id": "<credential-id>",
-          "name": "Supabase do portal"
-        }
-      }
+      "name": "Buscar trechos"
     },
     {
       "parameters": {
@@ -136,14 +125,7 @@
         976,
         336
       ],
-      "id": "226e2872-076d-4cc3-b1bb-9f354afb26b3",
-      "name": "Embeddings OpenRouter",
-      "credentials": {
-        "openAiApi": {
-          "id": "<credential-id>",
-          "name": "Base URL OpenRouter"
-        }
-      }
+      "name": "Embeddings OpenRouter"
     },
     {
       "parameters": {
@@ -175,7 +157,6 @@
         1100,
         -140
       ],
-      "id": "197e5279-970a-4bfd-a9e3-1c9ef15c8553",
       "name": "Encontrou trechos?"
     },
     {
@@ -190,7 +171,6 @@
         1320,
         -240
       ],
-      "id": "e3d9aa16-a096-40eb-b538-9129b43ef862",
       "name": "Agrupar trechos"
     },
     {
@@ -210,14 +190,7 @@
         1540,
         -240
       ],
-      "id": "edc29cea-669c-4784-ae55-8623d421f2fe",
-      "name": "Consultar modelo",
-      "credentials": {
-        "openAiApi": {
-          "id": "<credential-id>",
-          "name": "Base URL OpenRouter"
-        }
-      }
+      "name": "Consultar modelo"
     },
     {
       "parameters": {
@@ -251,7 +224,6 @@
         1760,
         -240
       ],
-      "id": "b8029f30-ff02-494b-a34b-fb9cbafea370",
       "name": "Montar resposta"
     },
     {
@@ -266,7 +238,6 @@
         1980,
         -240
       ],
-      "id": "7b830040-2dcc-4fcc-af6c-be43bb71b475",
       "name": "Responder resultado"
     },
     {
@@ -281,7 +252,6 @@
         1320,
         60
       ],
-      "id": "c3332213-44d9-4f35-9acd-57ea3cf5bb32",
       "name": "Responder sem base"
     },
     {
@@ -298,7 +268,6 @@
         660,
         200
       ],
-      "id": "d1fe2907-6625-4a23-a798-069987acb263",
       "name": "Responder 401"
     },
     {
@@ -313,7 +282,6 @@
         -260,
         -260
       ],
-      "id": "57ae2228-cbf2-4bae-b798-c4690f0ee635",
       "name": "Nota 1"
     },
     {
@@ -328,7 +296,6 @@
         820,
         -380
       ],
-      "id": "421daea6-8772-4267-aafc-84de44fe807f",
       "name": "Nota 2"
     },
     {
@@ -343,7 +310,6 @@
         1040,
         -380
       ],
-      "id": "678c6520-bcfd-460b-8d56-b5357414cde7",
       "name": "Nota 3"
     },
     {
@@ -358,7 +324,6 @@
         1500,
         -380
       ],
-      "id": "47e3c653-de76-4771-a1e1-e8f4dd891a71",
       "name": "Nota 4"
     }
   ],

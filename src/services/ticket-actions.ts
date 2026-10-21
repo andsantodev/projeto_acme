@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { validateAnswer } from "@/lib/answer";
+import { isTicketId } from "@/lib/ticket";
 
 import { getCurrentUser } from "./current-user";
 import { createSupabaseServerClient } from "./supabase/server";
@@ -18,6 +19,10 @@ export async function assumeTicketAction(
 
   if (!user) {
     return { ok: false, error: "Sua sessão expirou. Entre novamente." };
+  }
+
+  if (!isTicketId(ticketId)) {
+    return { ok: false, error: "Chamado não encontrado." };
   }
 
   if (user.role !== "atendente") {
@@ -52,6 +57,10 @@ export async function closeTicketAction(
 
   if (!user) {
     return { ok: false, error: "Sua sessão expirou. Entre novamente." };
+  }
+
+  if (!isTicketId(ticketId)) {
+    return { ok: false, error: "Chamado não encontrado." };
   }
 
   const supabase = await createSupabaseServerClient();

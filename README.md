@@ -1,15 +1,53 @@
 # Portal Acme
 
-Portal interno da Acme: o assistente de onboarding responde dúvidas a partir dos documentos da empresa (RAG) e o que não for resolvido vira um chamado para TI ou RH.
+Portal interno de uma empresa fictícia: um assistente de onboarding responde dúvidas a
+partir dos documentos da empresa e, quando não encontra a resposta, o colaborador abre um
+chamado para o time de TI ou de RH.
 
-O contexto de produto está em `docs/PRD.md`; o estado do trabalho, em `docs/progress.md`.
+## O problema
+
+Colaboradores novos fazem as mesmas perguntas (acessos, benefícios, férias) e dependem de
+outras pessoas para respondê-las. Quando a dúvida não está documentada, falta um canal
+registrado para resolvê-la.
+
+O portal cobre os dois lados: o assistente responde com base nos documentos oficiais e
+cita a fonte; o que não for resolvido vira um chamado com fila, atendente e resposta.
+
+## O que dá para fazer
+
+- **Colaboradora**: conversa com o assistente, vê a resposta com o documento de origem e
+  abre um chamado com a pergunta já preenchida quando não há resposta na base.
+- **Atendente de TI / RH**: vê a fila da sua categoria, assume o chamado, responde e
+  acompanha o status.
+- **Colaboradora (fechamento)**: lê a resposta e fecha o chamado quando estiver
+  resolvido.
+- **Base de conhecimento**: atualizada por um formulário protegido no n8n, fora do portal.
 
 ## Stack
 
 - Next.js 16 (App Router) e React 19, TypeScript estrito
 - Tailwind CSS 4
-- Supabase (Auth, Postgres com RLS, pgvector) e n8n para o fluxo de RAG
-- Vitest + React Testing Library
+- Supabase: Auth, Postgres com RLS e pgvector
+- n8n para a ingestão e a consulta RAG; OpenRouter para embeddings e modelo de chat
+- Vitest e React Testing Library
+
+## Arquitetura
+
+```
+Navegador
+   │ cookies HttpOnly
+   ▼
+Next.js (Server Components, Server Actions, src/proxy.ts)
+   ├── Supabase Auth + Postgres (RLS, pgvector)
+   └── n8n ── OpenRouter (embeddings e deepseek)
+```
+
+- O segredo do webhook do n8n e a chave `service_role` existem só no servidor.
+- A pergunta sai do Next por uma Server Action e chega ao n8n com um header secreto.
+- A resposta segue um contrato fixo: texto, lista de fontes e um indicador de que houve
+  base documental.
+- A ingestão dos documentos é feita por um formulário protegido no n8n, com limpeza e
+  regravação por documento.
 
 ## Como rodar
 
@@ -19,9 +57,19 @@ cp .env.example .env.local   # preencha as variáveis
 pnpm dev                     # http://localhost:3000
 ```
 
+Para funcionar, o ambiente precisa de:
+
+- um projeto Supabase com as tabelas `acme_*` criadas a partir de
+  `docs/sql/001_schema.sql` (inclui as políticas de RLS);
+- os três usuários de demonstração criados no Supabase Auth e os perfis
+  correspondentes em `acme_profiles`;
+- os dois workflows do n8n (exportados em `n8n/`), com as credenciais do Supabase e do
+  OpenRouter configuradas na instância.
+
 ## Contas de demonstração
 
-Usuários fictícios, criados no Supabase Auth do projeto de demonstração. As senhas são públicas de propósito: são contas de portfólio, sem dado real.
+Usuários fictícios, com senhas públicas de propósito: são contas de portfólio, sem dado
+real.
 
 | Perfil | E-mail | Senha | Tela inicial |
 |---|---|---|---|
@@ -29,12 +77,4 @@ Usuários fictícios, criados no Supabase Auth do projeto de demonstração. As 
 | Atendente de TI | `ti@acme.demo` | `acme@456` | `/fila` |
 | Atendente de RH | `rh@acme.demo` | `acme@789` | `/fila` |
 
-## Verificação
-
-```bash
-pnpm verify      # typecheck + lint + testes (portão principal)
-pnpm verify:rls  # cada usuário só lê o que pode, pela API REST do Supabase
-pnpm build       # build de produção
-```
-
-`pnpm test` roda os testes uma vez e sai com código diferente de zero quando uma asserção falha. `pnpm verify:rls` precisa de `.env.local` preenchido e cria dois chamados marcados `[verify:rls]`.
+Projeto de portfólio, com dados fictícios.
