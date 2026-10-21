@@ -1,5 +1,6 @@
 import "server-only";
 
+import { sortQueue, type QueueItem } from "@/lib/queue";
 import type { TicketDetail, TicketStatus, TicketSummary } from "@/types/ticket";
 import type { TicketCategory } from "@/types/user";
 
@@ -117,5 +118,68 @@ export async function getTicket(id: string): Promise<TicketDetailResult> {
       answeredAt: data.answered_at,
       createdAt: data.created_at,
     },
+  };
+}
+
+type QueueRow = {
+  id: string;
+  title: string;
+  category: TicketCategory;
+  status: TicketStatus;
+  created_at: string;
+  user_id: string;
+};
+
+type ProfileNameRow = {
+  id: string;
+  display_name: string;
+};
+
+export type QueueResult = { ok: true; tickets: QueueItem[] } | { ok: false };
+
+export async function listQueue(): Promise<QueueResult> {
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("acme_tickets")
+    .select("id, title, category, status, created_at, user_id")
+    .in("status", ["aberto", "em_andamento"])
+    .order("created_at", { ascending: false })
+    .returns<QueueRow[]>();
+
+  if (error || !data) {
+    return { ok: false };
+  }
+
+  const userIds = [...new Set(data.map((row) => row.user_id))];
+  const names = new Map<string, string>();
+
+  if (userIds.length > 0) {
+    const { data: profiles, error: profilesError } = await supabase
+      .from("acme_profiles")
+      .select("id, display_name")
+      .in("id", userIds)
+      .returns<ProfileNameRow[]>();
+
+    if (profilesError || !profiles) {
+      return { ok: false };
+    }
+
+    for (const profile of profiles) {
+      names.set(profile.id, profile.display_name);
+    }
+  }
+
+  return {
+    ok: true,
+    tickets: sortQueue(
+      data.map((row) => ({
+        id: row.id,
+        title: row.title,
+        category: row.category,
+        status: row.status,
+        createdAt: row.created_at,
+        requesterName: names.get(row.user_id) ?? "Colaborador",
+      })),
+    ),
   };
 }

@@ -142,6 +142,14 @@ assert(
   JSON.stringify(result.body),
 );
 
+result = await rest(sessions.rh.token, "acme_tickets?select=id,category");
+assert(
+  "atendente de RH vê apenas chamados de RH",
+  Array.isArray(result.body) &&
+    result.body.every((ticket) => ticket.category === "rh"),
+  JSON.stringify(result.body),
+);
+
 result = await rest(sessions.ti.token, "acme_profiles?select=id");
 assert(
   "atendente de TI lê o perfil de quem abriu chamado na sua categoria",

@@ -7,6 +7,42 @@ import { createSupabaseServerClient } from "./supabase/server";
 
 export type CloseTicketResult = { ok: true } | { ok: false; error: string };
 
+export type AssumeTicketResult = { ok: true } | { ok: false; error: string };
+
+export async function assumeTicketAction(
+  ticketId: string,
+): Promise<AssumeTicketResult> {
+  const user = await getCurrentUser();
+
+  if (!user) {
+    return { ok: false, error: "Sua sessão expirou. Entre novamente." };
+  }
+
+  if (user.role !== "atendente") {
+    return { ok: false, error: "Só atendentes podem assumir chamados." };
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("acme_tickets")
+    .update({ status: "em_andamento" })
+    .eq("id", ticketId)
+    .eq("status", "aberto")
+    .select("id");
+
+  if (error || !data || data.length === 0) {
+    return {
+      ok: false,
+      error: "Não foi possível assumir este chamado. Atualize a fila e tente de novo.",
+    };
+  }
+
+  revalidatePath("/fila");
+  revalidatePath(`/chamados/${ticketId}`);
+
+  return { ok: true };
+}
+
 export async function closeTicketAction(
   ticketId: string,
 ): Promise<CloseTicketResult> {
