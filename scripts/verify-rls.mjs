@@ -216,4 +216,20 @@ assert(
   `HTTP ${result.status}`,
 );
 
+result = await rest(ana.token, "acme_tickets", {
+  method: "POST",
+  headers: { Prefer: "return=minimal" },
+  body: JSON.stringify({
+    user_id: sessions.ti.userId,
+    category: "ti",
+    title: "[verify:rls] chamado em nome de outro",
+    description: "Tentativa de abrir chamado em nome de outra pessoa.",
+  }),
+});
+assert(
+  "colaborador não abre chamado em nome de outro usuário",
+  result.status === 401 || result.status === 403,
+  `HTTP ${result.status} ${JSON.stringify(result.body)}`,
+);
+
 console.log("\nverify:rls passou — isolamento por usuário e por categoria confirmado.");
