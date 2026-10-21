@@ -26,6 +26,10 @@ describe("PortalNav", () => {
     expect(
       screen.getByRole("link", { name: "Meus chamados" }),
     ).toHaveAttribute("href", "/meus-chamados");
+    expect(screen.getByRole("link", { name: "Novo chamado" })).toHaveAttribute(
+      "href",
+      "/chamados/novo",
+    );
     expect(screen.queryByRole("link", { name: "Fila de atendimento" })).toBeNull();
   });
 

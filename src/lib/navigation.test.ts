@@ -3,9 +3,10 @@ import { describe, expect, it } from "vitest";
 import { homeRouteFor, navigationFor } from "./navigation";
 
 describe("navigationFor", () => {
-  it("gives the colaborador the assistant and its own tickets", () => {
+  it("gives the colaborador the assistant, a new ticket and its own tickets", () => {
     expect(navigationFor("colaborador").map((item) => item.href)).toEqual([
       "/chat",
+      "/chamados/novo",
       "/meus-chamados",
     ]);
   });

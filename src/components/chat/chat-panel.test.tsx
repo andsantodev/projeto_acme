@@ -180,10 +180,10 @@ describe("ChatPanel", () => {
     expect(
       await screen.findByText("Você atingiu o limite de 10 perguntas hoje."),
     ).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Perguntar" })).toBeDisabled();
     expect(
-      screen.getByText(/Limite diário atingido/),
+      await screen.findByText(/Limite diário atingido/),
     ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Perguntar" })).toBeDisabled();
   });
 
   it("does not call the server for empty or above-limit questions", () => {
