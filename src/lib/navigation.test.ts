@@ -4,17 +4,27 @@ import { homeRouteFor, navigationFor } from "./navigation";
 
 describe("navigationFor", () => {
   it("gives the colaborador the assistant, a new ticket and its own tickets", () => {
-    expect(navigationFor("colaborador").map((item) => item.href)).toEqual([
-      "/chat",
-      "/chamados/novo",
-      "/meus-chamados",
-    ]);
+    expect(
+      navigationFor({ role: "colaborador", category: null }).map(
+        (item) => item.href,
+      ),
+    ).toEqual(["/chat", "/chamados/novo", "/meus-chamados"]);
   });
 
-  it("gives the atendente only the queue", () => {
-    expect(navigationFor("atendente").map((item) => item.href)).toEqual([
-      "/fila",
-    ]);
+  it("gives the RH attendant only the queue", () => {
+    expect(
+      navigationFor({ role: "atendente", category: "rh" }).map(
+        (item) => item.href,
+      ),
+    ).toEqual(["/fila"]);
+  });
+
+  it("gives the TI attendant the queue and the knowledge base", () => {
+    expect(
+      navigationFor({ role: "atendente", category: "ti" }).map(
+        (item) => item.href,
+      ),
+    ).toEqual(["/fila", "/documentos"]);
   });
 });
 

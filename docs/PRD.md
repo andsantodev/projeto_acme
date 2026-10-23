@@ -27,11 +27,12 @@ Motivação do projeto: é um projeto de portfólio, sem intenção comercial.
 - Anexos ou upload de PDF nos chamados.
 - Envio real de e-mail. A notificação é apenas um aviso de simulação na interface (ver RF-16).
 - Registro de notificações como entidade própria no banco (ver RF-16).
-- Upload de documentos da base RAG pelo painel do portal. A ingestão é feita por um workflow do n8n.
 - Histórico do chat salvo entre sessões ou entre recarregamentos de página.
 - Cadastro livre de usuários.
 - Multiempresa (multi-tenant).
 - Troca de mensagens dentro do mesmo chamado (uma resposta do atendente por chamado).
+- Edição do texto do documento pelo portal: o TI envia o arquivo `.md` inteiro.
+- Versionamento, histórico ou rastreio de quem alterou cada documento da base.
 - Ambiente local de banco (Docker/Supabase local). Desenvolvimento e demo usam o projeto Supabase hospedado.
 
 ## 5. Usuários e jornada
@@ -41,11 +42,11 @@ Motivação do projeto: é um projeto de portfólio, sem intenção comercial.
 | Perfil | Papel (`role`) | Categoria (`category`) | Tela inicial | Acesso |
 |---|---|---|---|---|
 | Ana, colaboradora nova | `colaborador` | — | `/chat` | Chat, "Meus chamados" e detalhe dos próprios chamados |
-| Atendente de TI | `atendente` | `ti` | `/fila` | Fila de TI e detalhe/resposta dos chamados de TI |
-| Atendente de RH | `atendente` | `rh` | `/fila` | Fila de RH e detalhe/resposta dos chamados de RH |
+| Atendente de TI | `atendente` | `ti` | `/fila` | Fila de TI, detalhe/resposta dos chamados de TI e base de conhecimento (`/documentos`) |
+| Atendente de RH | `atendente` | `rh` | `/fila` | Fila de RH e detalhe/resposta dos chamados de RH (sem acesso à base de conhecimento) |
 | Avaliador da demo | — | — | `/login` | Entra com um dos usuários acima e alterna saindo/entrando |
 
-Um atendente que tente acessar `/chat` ou `/meus-chamados` é redirecionado para `/fila`.
+Um atendente que tente acessar `/chat` ou `/meus-chamados` é redirecionado para `/fila`. Apenas o atendente de TI acessa `/documentos`; o atendente de RH recebe não encontrado.
 
 **Jornada principal**
 1. A colaboradora faz login e cai na tela do assistente.
@@ -82,8 +83,12 @@ Um atendente que tente acessar `/chat` ou `/meus-chamados` é redirecionado para
 
 **Base de conhecimento (RAG)**
 - RF-18: Os documentos da Acme são cinco arquivos Markdown (`.md`) fictícios, versionados no repositório em `content/knowledge/`: acessos, benefícios, férias, onboarding e sobre a empresa. O repositório é apenas o local de armazenamento dos originais; nada em produção lê o GitHub.
-- RF-19: Um workflow do n8n hospedado (`Acme - Upload de documentos`) recebe o upload dos `.md` por formulário, exige uma senha conferida dentro do workflow e grava em `acme_documents_vec` no Supabase. Antes de inserir, ele apaga apenas os trechos cujas fontes (`metadata.source`) estão no envio, então um documento novo é adicionado sem reenviar os demais e um arquivo com o mesmo nome é substituído. Um segundo workflow (`Acme - Remover documento`) exclui um documento pelo nome ou limpa a base inteira, com a mesma senha. O texto é dividido em trechos, os embeddings são gerados e a gravação usa a credencial Supabase do portal. É executado sob demanda, nunca pelo painel do portal.
-- RF-20: Um workflow do n8n hospedado (`Acme - Consulta RAG`) recebe a pergunta por webhook (segredo em header), faz busca vetorial (`topK` 4) na base e usa o modelo `deepseek/deepseek-v4.1-flash` para responder apenas com base nos trechos recuperados, devolvendo o contrato JSON da seção 7.1. Sem trecho relevante, devolve `grounded: false` sem chamar o modelo. Os dois workflows são cópias dos fluxos de referência do autor, que não devem ser alterados.
+- RF-19: A base é atualizada por dois workflows com o mesmo pipeline: `Acme - Upload de documentos` (formulário com vários `.md` + senha, fallback manual) e `Acme - Upload de documentos (portal)` (webhook autenticado por `x-acme-secret`, usado pela página `/documentos`). O Form Trigger do n8n não aceita `Respond to Webhook` no mesmo fluxo, por isso o webhook tem workflow próprio. Antes de inserir, ele apaga apenas os trechos cujas fontes (`metadata.source`) estão no envio, então um documento novo é adicionado sem reenviar os demais e um arquivo com o mesmo nome é substituído. O texto é dividido em trechos, os embeddings são gerados e a gravação usa a credencial Supabase do portal. A tabela nunca é truncada. O workflow `Acme - Remover documento` também aceita formulário e webhook: pelo portal remove-se apenas um documento, pelo nome; a limpeza da base inteira continua disponível somente no formulário.
+- RF-20: Um workflow do n8n hospedado (`Acme - Consulta RAG`) recebe a pergunta por webhook (segredo em header), faz busca vetorial (`topK` 4) na base e usa o modelo `deepseek/deepseek-v4.1-flash` para responder apenas com base nos trechos recuperados, devolvendo o contrato JSON da seção 7.1. Sem trecho relevante, devolve `grounded: false` sem chamar o modelo. Os workflows de RAG derivam dos fluxos de referência do autor, que não devem ser alterados.
+
+**Base de conhecimento — gestão pelo portal**
+- RF-21: Apenas o atendente de TI acessa `/documentos` ("Base de conhecimento"), com item próprio no menu. A página lista os documentos existentes (nome, número de trechos e data da última atualização), a partir de `acme_list_documents()`, e tem o botão "Adicionar/atualizar documento", que aceita até 10 arquivos `.md` de até 200 KB cada e exige a senha `DOCS_ADMIN_PASSWORD`. Enviar um arquivo com nome já existente substitui somente aquele documento; um nome novo cria um documento novo. A página trata os quatro estados de interface.
+- RF-22: A página permite remover um documento pelo nome, exigindo a mesma senha e confirmação explícita. A remoção apaga somente os trechos daquele documento e a lista é atualizada em seguida.
 
 ## 7. Requisitos não-funcionais
 
@@ -112,10 +117,37 @@ Response (2xx):
 
 Timeouts, `5xx` e respostas fora desse formato são tratados como estado de erro (RF-08). O segredo é conferido no workflow; requisição sem header válido é rejeitada.
 
+### 7.2 Contrato Next ↔ n8n (documentos)
+
+Todas as chamadas partem do servidor do Next com o header `x-acme-secret`. A senha `DOCS_ADMIN_PASSWORD` é conferida no Next e **nunca** é enviada ao n8n.
+
+**Adicionar/atualizar** — `POST` `multipart/form-data` em `N8N_UPLOAD_WEBHOOK_URL` (`/webhook/acme-docs-upload`), com um ou mais arquivos no campo `files`:
+
+```
+200 → { "ok": true, "documents": ["acessos.md", "ferias.md"] }
+```
+
+Cada arquivo é tratado como um documento; o nome do arquivo é a chave (`metadata.source`).
+
+**Remover** — `POST application/json` em `N8N_REMOVE_WEBHOOK_URL` (`/webhook/acme-docs-remove`):
+
+```json
+{ "document": "acessos.md" }
+```
+
+```
+200 → { "ok": true }
+```
+
+Requisição sem header válido retorna `401`. Timeout de 30s, resposta não-2xx ou corpo fora do formato são tratados como erro na interface, com a lista preservada e opção de tentar de novo.
+
+Os formulários do n8n continuam disponíveis como fallback manual. A consulta lê a tabela vetorial diretamente, sem cache: um documento enviado ou removido já vale na pergunta seguinte.
+
 **Segurança**
 - Segredos (segredo do webhook, chave `service_role` do Supabase, chave do provedor de IA) ficam só no servidor, isolados com `server-only`. A chave `service_role` nunca vai ao front-end nem em variável `NEXT_PUBLIC_*`.
-- RLS ativado em todas as tabelas do portal, com políticas explícitas. O colaborador acessa apenas os seus chamados, e o atendente apenas os da sua categoria. `acme_chat_usage` e `acme_documents_vec` não têm policy para `anon`/`authenticated`: são acessadas só por função `security definer` e por `service_role`.
-- O webhook de consulta do n8n exige segredo em header, validado no workflow, e só é chamado pelo servidor do Next.
+- RLS ativado em todas as tabelas do portal, com políticas explícitas. O colaborador acessa apenas os seus chamados, e o atendente apenas os da sua categoria. `acme_chat_usage` e `acme_documents_vec` não têm policy para `anon`/`authenticated`: são acessadas só por função `security definer` e por `service_role`. A listagem de documentos usa `acme_list_documents()`, que exige atendente de categoria `ti`.
+- A senha de publicação dos documentos é `DOCS_ADMIN_PASSWORD`: variável de servidor, distinta de `N8N_RAG_SECRET`, conferida no Next antes de qualquer chamada ao n8n. Ela nunca vai ao cliente nem ao n8n.
+- Os webhooks de consulta e de documentos do n8n exigem segredo em header, validado no workflow, e só são chamados pelo servidor do Next.
 - Entradas validadas no servidor (limites de tamanho, categoria, status). Saída renderizada pelo JSX, sem HTML injetado.
 - O assistente é instruído a responder só sobre os documentos da Acme, sem executar ações. As fontes exibidas vêm do workflow, não do texto livre do modelo.
 - Nenhum segredo, chave ou dado de outros projetos no repositório. O banco é compartilhado com outros projetos do autor: o portal só pode criar e alterar objetos com o prefixo `acme_`.
@@ -135,7 +167,8 @@ Timeouts, `5xx` e respostas fora desse formato são tratados como estado de erro
 - Testes unitários e de componentes com Vitest e React Testing Library (validações, lógica de permissão, componentes de cliente, tratamento de erro do chat).
 - Testes E2E com Playwright para três fluxos: login, colaboradora abre chamado, atendente responde e o status atualiza. Componentes de servidor assíncronos são cobertos por E2E, não por teste unitário.
 - Os E2E rodam contra o servidor local do Next apontando para o Supabase hospedado, sem banco local. Os dados criados são marcados com `[e2e]` e timestamp no título e não são apagados automaticamente.
-- Verificações de contrato: `pnpm verify:knowledge` confirma os 5 documentos na base vetorial; `pnpm verify:rag` confirma o contrato JSON, o `grounded: false` para pergunta fora da base e a presença de fontes; `pnpm verify:rls` confirma que cada usuário só lê o que pode.
+- Verificações de contrato: `pnpm verify:knowledge` confirma os 5 documentos na base vetorial; `pnpm verify:rag` confirma o contrato JSON, o `grounded: false` para pergunta fora da base e a presença de fontes; `pnpm verify:rls` confirma que cada usuário só lê o que pode; `pnpm verify:documents` sobe um documento de teste, confere que ele aparece na listagem e o remove em seguida.
+- A gestão de documentos é coberta por testes de componente (lista, formulário de envio, confirmação de remoção) e por `pnpm verify:documents`, que exercita os webhooks reais do n8n.
 
 **Acessibilidade**
 - Formulários com rótulos, navegação por teclado e contraste adequado nas telas principais.
@@ -152,6 +185,9 @@ Timeouts, `5xx` e respostas fora desse formato são tratados como estado de erro
 - Nenhum segredo no repositório nem no código enviado ao navegador.
 - Um colaborador não consegue ler chamado de outro, e um atendente não consegue ler chamado de outra categoria — verificado por requisição direta à API REST do Supabase com o JWT de cada usuário.
 - A 11ª pergunta do dia é recusada no servidor, sem chamar o n8n.
+- Enviar um documento com nome já existente não duplica trechos: o documento continua com uma única versão na base.
+- Um documento removido pelo portal deixa de ser citado nas respostas do assistente.
+- O atendente de RH não consegue abrir `/documentos` nem chamar `acme_list_documents()`.
 - Repositório público com README que descreve problema, arquitetura, como rodar e decisões.
 
 ## 10. Riscos e premissas
@@ -165,6 +201,8 @@ Timeouts, `5xx` e respostas fora desse formato são tratados como estado de erro
 - **Código gerado por IA:** risco de falhas de segurança e de estrutura. Mitigação: revisão do autor de cada feature, com testes e verificação antes de marcar como concluída.
 - **Escopo:** acrescentar recursos (anexos, e-mail real, histórico) atrasa a entrega. Eles estão fora do escopo.
 - **Credenciais da demo públicas:** podem ser abusadas. Mitigação: permissões mínimas e limite diário do chat.
+- **Substituição de documento é apagar-e-inserir:** se a inserção falhar depois do delete, o documento fica ausente até o reenvio. Mitigação: a interface mostra o erro, mantém a lista e permite tentar de novo; o nome do documento é a chave, então o reenvio é seguro.
+- **Senha de publicação única:** quem a obtiver com uma sessão de TI válida altera a base. Mitigação: senha separada do segredo do webhook, conferida no servidor, e acesso à página restrito ao atendente de TI.
 
 **Premissas**
 - Os documentos da base são fictícios, escritos em Markdown e versionados em `content/knowledge/`.
@@ -175,7 +213,9 @@ Timeouts, `5xx` e respostas fora desse formato são tratados como estado de erro
 - Não há ambiente local de banco; o desenvolvimento usa o Supabase hospedado.
 - Cada chamado recebe uma resposta do atendente. Troca de mensagens não faz parte da primeira versão.
 
-## 11. Decisões fechadas na revisão de 2026-10-20
+## 11. Decisões fechadas
+
+Revisões de 20 e 23 de outubro de 2026.
 
 | Tema | Decisão |
 |---|---|
@@ -183,7 +223,8 @@ Timeouts, `5xx` e respostas fora desse formato são tratados como estado de erro
 | Notificação | Sem entidade e sem n8n; apenas o aviso de simulação derivado do status |
 | Papéis | Tabela `acme_profiles` com `role` e `category`; três perfis com telas iniciais distintas |
 | Limite do chat | 10/dia por usuário, America/Sao_Paulo, tentativas com erro contam |
-| Ingestão | Formulário no n8n com senha, limpeza prévia e upsert em `acme_documents_vec` |
+| Ingestão | Upload por formulário e por webhook do portal, upsert por documento via `metadata.source`; a base nunca é truncada |
+| Gestão de documentos | Página `/documentos` só para atendente TI, com lista via `acme_list_documents()`, envio e remoção protegidos por `DOCS_ADMIN_PASSWORD` |
 | Consulta | Busca vetorial (topK 4) + LLM, contrato JSON com `sources` e `grounded` |
 | Banco | Projeto Supabase compartilhado, prefixo `acme_` em `public`, pgvector já instalado |
 | Modelos | Chat `deepseek/deepseek-v4.1-flash`; embeddings `openai/text-embedding-3-small` |

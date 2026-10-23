@@ -1,0 +1,450 @@
+{
+  "name": "Acme - Upload de documentos (portal)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "acme-docs-upload",
+        "responseMode": "responseNode",
+        "options": {
+          "binaryPropertyName": "files"
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        -48
+      ],
+      "name": "Webhook do portal"
+    },
+    {
+      "parameters": {
+        "type": "SHA256",
+        "value": "={{ $json.headers[\"x-acme-secret\"] || \"\" }}",
+        "dataPropertyName": "secretHash"
+      },
+      "type": "n8n-nodes-base.crypto",
+      "typeVersion": 1,
+      "position": [
+        224,
+        -48
+      ],
+      "name": "Hash do segredo"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "secret-hash",
+              "leftValue": "={{ $json.secretHash }}",
+              "rightValue": "9e4d3c470fa8a47cf9d5fbc74a62e295e00592d7639c22d5c808c59875dacd32",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        448,
+        -48
+      ],
+      "name": "Segredo correto?"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"error\": \"unauthorized\" } }}",
+        "options": {
+          "responseCode": 401
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        672,
+        48
+      ],
+      "name": "Responder 401"
+    },
+    {
+      "parameters": {
+        "jsCode": "const first = $input.first();\nconst binary = first.binary || {};\nconst files = [];\nfor (const key of Object.keys(binary)) {\n  const file = binary[key];\n  if (file && file.fileName) files.push(file);\n}\nconst names = files.map((file) => file.fileName);\nconst namesValid =\n  names.length > 0 && names.every((name) => /^[a-zA-Z0-9._-]+\\.md$/i.test(name));\nreturn files.map((file) => ({\n  json: { fileName: file.fileName, names, namesValid },\n  binary: { data: file },\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        672,
+        -144
+      ],
+      "name": "Coletar arquivos"
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "tableId": "acme_documents_vec",
+        "filterType": "string",
+        "filterString": "=metadata->>source=in.({{ $json.names.join(',') }})"
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        896,
+        -144
+      ],
+      "name": "Limpar fontes enviadas",
+      "alwaysOutputData": true,
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const files = $('Coletar arquivos').all();\nreturn files.map((item) => ({ json: { fileName: item.json.fileName }, binary: { data: item.binary.data } }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        -144
+      ],
+      "name": "Separar arquivos"
+    },
+    {
+      "parameters": {
+        "operation": "text",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        1344,
+        -144
+      ],
+      "name": "Extrair texto"
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "tableName": {
+          "__rl": true,
+          "mode": "list",
+          "value": "acme_documents_vec"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1,
+      "position": [
+        1600,
+        -144
+      ],
+      "name": "Gravar na base vetorial"
+    },
+    {
+      "parameters": {
+        "model": "openai/text-embedding-3-small",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1,
+      "position": [
+        1576,
+        88
+      ],
+      "name": "Embeddings OpenRouter"
+    },
+    {
+      "parameters": {
+        "jsonMode": "expressionData",
+        "jsonData": "={{ $json.data }}",
+        "options": {
+          "metadata": {
+            "metadataValues": [
+              {
+                "name": "source",
+                "value": "={{ $('Separar arquivos').item.json.fileName }}"
+              }
+            ]
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1,
+      "position": [
+        1704,
+        88
+      ],
+      "name": "Carregar documento"
+    },
+    {
+      "parameters": {
+        "chunkOverlap": 150,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.textSplitterRecursiveCharacterTextSplitter",
+      "typeVersion": 1,
+      "position": [
+        1784,
+        296
+      ],
+      "name": "Dividir em trechos"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"ok\": true, \"documents\": $('Coletar arquivos').first().json.names } }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        2064,
+        -144
+      ],
+      "name": "Responder resultado"
+    },
+    {
+      "parameters": {
+        "content": "## Entrada\nWebhook `POST /webhook/acme-docs-upload` com `multipart/form-data` no campo `files`.\nO header `x-acme-secret` e conferido por SHA-256 antes de qualquer escrita.",
+        "height": 150,
+        "width": 320
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -256,
+        -256
+      ],
+      "name": "Nota 1"
+    },
+    {
+      "parameters": {
+        "content": "## Mesmo pipeline do formulario\nApaga so as fontes deste envio (`metadata->>source`), divide em trechos e grava com embeddings.\nO formulario continua no workflow `Acme - Upload de documentos`.",
+        "height": 150,
+        "width": 340
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        896,
+        -352
+      ],
+      "name": "Nota 2"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "names-valid",
+              "leftValue": "={{ $json.namesValid }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        896,
+        -352
+      ],
+      "name": "Nomes validos?",
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"error\": \"invalid document name\" } }}",
+        "options": {
+          "responseCode": 400
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1120,
+        -352
+      ],
+      "name": "Responder 400"
+    }
+  ],
+  "connections": {
+    "Webhook do portal": {
+      "main": [
+        [
+          {
+            "node": "Hash do segredo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Hash do segredo": {
+      "main": [
+        [
+          {
+            "node": "Segredo correto?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Segredo correto?": {
+      "main": [
+        [
+          {
+            "node": "Coletar arquivos",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Responder 401",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limpar fontes enviadas": {
+      "main": [
+        [
+          {
+            "node": "Separar arquivos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Separar arquivos": {
+      "main": [
+        [
+          {
+            "node": "Extrair texto",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extrair texto": {
+      "main": [
+        [
+          {
+            "node": "Gravar na base vetorial",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenRouter": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Gravar na base vetorial",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Carregar documento": {
+      "ai_document": [
+        [
+          {
+            "node": "Gravar na base vetorial",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Dividir em trechos": {
+      "ai_textSplitter": [
+        [
+          {
+            "node": "Carregar documento",
+            "type": "ai_textSplitter",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gravar na base vetorial": {
+      "main": [
+        [
+          {
+            "node": "Responder resultado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Coletar arquivos": {
+      "main": [
+        [
+          {
+            "node": "Nomes validos?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Nomes validos?": {
+      "main": [
+        [
+          {
+            "node": "Limpar fontes enviadas",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Responder 400",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true,
+    "binaryMode": "separate"
+  }
+}
