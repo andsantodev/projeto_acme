@@ -61,12 +61,14 @@ pnpm dev                     # http://localhost:3000
 
 Para funcionar, o ambiente precisa de:
 
-- um projeto Supabase com as tabelas `acme_*` criadas a partir de
+- um projeto Supabase com as tabelas e funções `acme_*` criadas a partir de
   `docs/sql/001_schema.sql` (inclui as políticas de RLS);
 - os três usuários de demonstração criados no Supabase Auth e os perfis
   correspondentes em `acme_profiles`;
-- os workflows do n8n (exportados em `n8n/`), com as credenciais do Supabase e do
-  OpenRouter configuradas na instância.
+- os workflows do n8n (exportados em `n8n/`, sem credenciais — selecione as do Supabase e
+  do OpenRouter na importação).
+
+A senha de `/documentos` é o valor de `DOCS_ADMIN_PASSWORD` definido no `.env.local`.
 
 ## Contas de demonstração
 
