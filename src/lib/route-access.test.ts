@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { canAccess } from "./route-access";
+import { canAccess, canManageDocuments } from "./route-access";
 
 describe("canAccess", () => {
   it("gives the colaborador the assistant and its own tickets", () => {
@@ -16,5 +16,15 @@ describe("canAccess", () => {
     expect(canAccess("atendente", "queue")).toBe(true);
     expect(canAccess("atendente", "assistant")).toBe(false);
     expect(canAccess("atendente", "my-tickets")).toBe(false);
+  });
+});
+
+describe("canManageDocuments", () => {
+  it("only lets the TI attendant manage the knowledge base", () => {
+    expect(canManageDocuments({ role: "atendente", category: "ti" })).toBe(true);
+    expect(canManageDocuments({ role: "atendente", category: "rh" })).toBe(false);
+    expect(canManageDocuments({ role: "colaborador", category: null })).toBe(
+      false,
+    );
   });
 });

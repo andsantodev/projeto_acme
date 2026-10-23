@@ -19,9 +19,11 @@ cita a fonte; o que não for resolvido vira um chamado com fila, atendente e res
   abre um chamado com a pergunta já preenchida quando não há resposta na base.
 - **Atendente de TI / RH**: vê a fila da sua categoria, assume o chamado, responde e
   acompanha o status.
+- **Atendente de TI**: gerencia a base de conhecimento em `/documentos`, com a lista dos
+  documentos, o envio de um ou mais arquivos `.md` (nome existente substitui a versão
+  anterior) e a remoção de um documento.
 - **Colaboradora (fechamento)**: lê a resposta e fecha o chamado quando estiver
   resolvido.
-- **Base de conhecimento**: atualizada por um formulário protegido no n8n, fora do portal.
 
 ## Stack
 
@@ -46,8 +48,8 @@ Next.js (Server Components, Server Actions, src/proxy.ts)
 - A pergunta sai do Next por uma Server Action e chega ao n8n com um header secreto.
 - A resposta segue um contrato fixo: texto, lista de fontes e um indicador de que houve
   base documental.
-- A ingestão dos documentos é feita por um formulário protegido no n8n, com limpeza e
-  regravação por documento.
+- A base de conhecimento é atualizada pelo portal, por um webhook autenticado, ou pelo
+  formulário do n8n; cada envio substitui apenas as fontes enviadas.
 
 ## Como rodar
 
@@ -63,7 +65,7 @@ Para funcionar, o ambiente precisa de:
   `docs/sql/001_schema.sql` (inclui as políticas de RLS);
 - os três usuários de demonstração criados no Supabase Auth e os perfis
   correspondentes em `acme_profiles`;
-- os dois workflows do n8n (exportados em `n8n/`), com as credenciais do Supabase e do
+- os workflows do n8n (exportados em `n8n/`), com as credenciais do Supabase e do
   OpenRouter configuradas na instância.
 
 ## Contas de demonstração

@@ -12,6 +12,7 @@
     "verify": "pnpm typecheck && pnpm lint && pnpm test",
     "verify:rls": "node --env-file=.env.local scripts/verify-rls.mjs",
     "verify:knowledge": "node --env-file=.env.local scripts/verify-knowledge.mjs",
+    "verify:documents": "node --env-file=.env.local scripts/verify-documents.mjs",
     "verify:rag": "node --env-file=.env.local scripts/verify-rag.mjs"
   },
   "dependencies": {

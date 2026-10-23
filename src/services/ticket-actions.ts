@@ -102,6 +102,11 @@ export async function answerTicketAction(
   }
 
   const ticketId = String(formData.get("ticketId") ?? "");
+
+  if (!isTicketId(ticketId)) {
+    return { error: "Chamado não encontrado." };
+  }
+
   const parsed = validateAnswer(String(formData.get("answer") ?? ""));
 
   if (!parsed.ok) {

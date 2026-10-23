@@ -17,7 +17,7 @@ describe("PortalNav", () => {
   });
 
   it("renders the destinations of the current role", () => {
-    render(<PortalNav items={navigationFor("colaborador")} />);
+    render(<PortalNav items={navigationFor({ role: "colaborador", category: null })} />);
 
     expect(screen.getByRole("link", { name: "Assistente" })).toHaveAttribute(
       "href",
@@ -34,7 +34,7 @@ describe("PortalNav", () => {
   });
 
   it("marks the current destination and only it", () => {
-    render(<PortalNav items={navigationFor("colaborador")} />);
+    render(<PortalNav items={navigationFor({ role: "colaborador", category: null })} />);
 
     expect(screen.getByRole("link", { name: "Assistente" })).toHaveAttribute(
       "aria-current",
@@ -48,7 +48,7 @@ describe("PortalNav", () => {
   it("marks the queue when it is the current path", () => {
     currentPath.value = "/fila";
 
-    render(<PortalNav items={navigationFor("atendente")} />);
+    render(<PortalNav items={navigationFor({ role: "atendente", category: "ti" })} />);
 
     expect(
       screen.getByRole("link", { name: "Fila de atendimento" }),

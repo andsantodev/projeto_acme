@@ -1,0 +1,221 @@
+{
+  "name": "Acme - Remover documento (portal)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "acme-docs-remove",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [0, 48],
+      "name": "Webhook do portal"
+    },
+    {
+      "parameters": {
+        "type": "SHA256",
+        "value": "={{ $json.headers[\"x-acme-secret\"] || \"\" }}",
+        "dataPropertyName": "secretHash"
+      },
+      "type": "n8n-nodes-base.crypto",
+      "typeVersion": 1,
+      "position": [224, 48],
+      "name": "Hash do segredo"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "secret-hash",
+              "leftValue": "={{ $json.secretHash }}",
+              "rightValue": "9e4d3c470fa8a47cf9d5fbc74a62e295e00592d7639c22d5c808c59875dacd32",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [448, 48],
+      "name": "Segredo correto?"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"error\": \"unauthorized\" } }}",
+        "options": {
+          "responseCode": 401
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [672, 144],
+      "name": "Responder 401"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "document",
+              "name": "document",
+              "value": "={{ ($json.body && $json.body.document ? String($json.body.document) : '').trim() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [672, -48],
+      "name": "Preparar documento"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const doc = String($input.first().json.document || \"\");\nconst valid = /^[a-zA-Z0-9._-]+\\.md$/i.test(doc);\nreturn [{ json: { document: doc, valid } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [896, -144],
+      "name": "Validar nome"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "document-valid",
+              "leftValue": "={{ $json.valid }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [1120, -144],
+      "name": "Nome valido?"
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "tableId": "acme_documents_vec",
+        "filterType": "string",
+        "filterString": "=metadata->>source=eq.{{ $json.document }}"
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [1344, -144],
+      "name": "Remover arquivo",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"ok\": true } }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [1568, -144],
+      "name": "Responder resultado"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"error\": \"invalid document\" } }}",
+        "options": {
+          "responseCode": 400
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [1344, 32],
+      "name": "Responder 400"
+    },
+    {
+      "parameters": {
+        "content": "## Remocao pelo portal\n`POST /webhook/acme-docs-remove` com `{ \"document\": \"arquivo.md\" }` e o header `x-acme-secret`.\nRemove so os trechos daquele `metadata->>source`; a base nunca e truncada aqui.",
+        "height": 150,
+        "width": 340
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [-256, -256],
+      "name": "Nota 1"
+    }
+  ],
+  "connections": {
+    "Webhook do portal": {
+      "main": [
+        [{ "node": "Hash do segredo", "type": "main", "index": 0 }]
+      ]
+    },
+    "Hash do segredo": {
+      "main": [
+        [{ "node": "Segredo correto?", "type": "main", "index": 0 }]
+      ]
+    },
+    "Segredo correto?": {
+      "main": [
+        [{ "node": "Preparar documento", "type": "main", "index": 0 }],
+        [{ "node": "Responder 401", "type": "main", "index": 0 }]
+      ]
+    },
+    "Preparar documento": {
+      "main": [
+        [{ "node": "Validar nome", "type": "main", "index": 0 }]
+      ]
+    },
+    "Validar nome": {
+      "main": [
+        [{ "node": "Nome valido?", "type": "main", "index": 0 }]
+      ]
+    },
+    "Nome valido?": {
+      "main": [
+        [{ "node": "Remover arquivo", "type": "main", "index": 0 }],
+        [{ "node": "Responder 400", "type": "main", "index": 0 }]
+      ]
+    },
+    "Remover arquivo": {
+      "main": [
+        [{ "node": "Responder resultado", "type": "main", "index": 0 }]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true,
+    "binaryMode": "separate"
+  }
+}
