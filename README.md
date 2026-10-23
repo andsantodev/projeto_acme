@@ -1,8 +1,13 @@
 # Portal Acme
 
-Portal interno de uma empresa fictícia: um assistente de onboarding responde dúvidas a
-partir dos documentos da empresa e, quando não encontra a resposta, o colaborador abre um
-chamado para o time de TI ou de RH.
+![Portal Acme: assistente de onboarding com RAG respondendo e citando os documentos de origem](docs/portal-acme-rag.png)
+
+Portal interno de uma empresa fictícia: um assistente de onboarding **com RAG**
+(Retrieval-Augmented Generation) responde dúvidas a partir dos documentos da empresa e,
+quando não encontra a resposta, o colaborador abre um chamado para o time de TI ou de RH.
+
+**Demo online:** [projeto-acme-rag.vercel.app](https://projeto-acme-rag.vercel.app/login) —
+as contas de demonstração aparecem na tela de login e estão listadas no fim deste README.
 
 ## O problema
 
@@ -24,6 +29,24 @@ cita a fonte; o que não for resolvido vira um chamado com fila, atendente e res
   anterior) e a remoção de um documento.
 - **Colaboradora (fechamento)**: lê a resposta e fecha o chamado quando estiver
   resolvido.
+
+## Assistente com RAG
+
+As respostas não vêm da memória do modelo: cada uma sai de trechos recuperados dos
+documentos oficiais da Acme.
+
+- **Ingestão**: o atendente de TI envia um `.md` pelo portal e o n8n divide o texto em
+  trechos (1000 caracteres, com 150 de sobreposição), gera os embeddings com
+  `openai/text-embedding-3-small` e grava na tabela vetorial do Supabase (pgvector). Um
+  arquivo com nome existente substitui apenas aquele documento.
+- **Recuperação**: a pergunta vira embedding e a busca vetorial (`acme_match_documents`,
+  `topK` 4) traz os trechos mais próximos.
+- **Gate de relevância**: trecho com score abaixo de 0,4 é descartado. Se nenhum passa, o
+  modelo nem é chamado e a resposta volta como `grounded: false`, com a oferta de abrir
+  chamado — o assistente prefere dizer que não encontrou a inventar uma resposta.
+- **Resposta**: o modelo recebe apenas os trechos recuperados e responde citando o
+  documento; as fontes exibidas abaixo de cada resposta vêm do workflow, não do texto
+  livre do modelo.
 
 ## Stack
 
